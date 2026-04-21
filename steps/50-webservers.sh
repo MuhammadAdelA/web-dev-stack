@@ -17,6 +17,32 @@ configure_nginx_phpmyadmin_alias() {
   log_warn "Nginx phpMyAdmin snippet written to $conf_target; include it in your server block manually if needed"
 }
 
+configure_apache_php_handler() {
+  local php_module="php${PHP_DEFAULT_VERSION}"
+
+  install_packages "Ensuring Apache PHP module package for PHP $PHP_DEFAULT_VERSION" "libapache2-mod-php${PHP_DEFAULT_VERSION}"
+
+  # mod_php requires Apache prefork MPM; switch from event when needed.
+  run_bash "Ensuring Apache prefork MPM for mod_php" "
+if a2query -m mpm_event >/dev/null 2>&1; then
+  a2dismod mpm_event
+fi
+a2enmod mpm_prefork
+"
+
+  # Keep Apache PHP handler explicit and predictable on re-runs.
+  run_bash "Disabling non-default Apache PHP modules" "
+for mod_file in /etc/apache2/mods-enabled/php*.load; do
+  [ -e \"\$mod_file\" ] || continue
+  mod_name=\$(basename \"\$mod_file\" .load)
+  if [ \"\$mod_name\" != \"$php_module\" ]; then
+    a2dismod \"\$mod_name\"
+  fi
+done
+"
+  run_cmd "Enabling Apache PHP module $php_module" a2enmod "$php_module"
+}
+
 step_main() {
   local key="50-webservers"
   if skip_if_done "$key"; then return 0; fi
@@ -26,6 +52,9 @@ step_main() {
       install_packages "Installing Apache" apache2
       run_cmd "Enabling Apache rewrite" a2enmod rewrite
       run_cmd "Enabling Apache headers" a2enmod headers
+      if is_yes "$INSTALL_PHP"; then
+        configure_apache_php_handler
+      fi
       run_cmd "Enabling Apache" systemctl enable apache2
       run_cmd "Starting Apache" systemctl restart apache2
       ;;

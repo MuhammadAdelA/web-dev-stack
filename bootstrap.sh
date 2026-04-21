@@ -39,6 +39,7 @@ CLI_DB_SERVER=""
 CLI_INSTALL_POSTGRESQL=""
 CLI_INSTALL_REDIS=""
 CLI_INSTALL_PHPMYADMIN=""
+CLI_INSTALL_VIRTUALSERVERS=""
 CLI_PHPMYADMIN_ALIAS=""
 CLI_ENABLE_UNIVERSE=""
 CLI_ENABLE_PPA_ONDREJ_PHP=""
@@ -84,6 +85,7 @@ Options:
   --install-postgresql <yn>  Set INSTALL_POSTGRESQL (yes/no).
   --install-redis <yn>  Set INSTALL_REDIS (yes/no).
   --install-phpmyadmin <yn>  Set INSTALL_PHPMYADMIN (yes/no).
+  --install-virtualservers <yn> Set INSTALL_VIRTUALSERVERS (yes/no).
   --phpmyadmin-alias <path>  Set PHPMYADMIN_ALIAS.
   --enable-universe <yn>     Set ENABLE_UNIVERSE (yes/no).
   --enable-ppa-ondrej-php <yn> Set ENABLE_PPA_ONDREJ_PHP (yes/no).
@@ -205,6 +207,11 @@ parse_args() {
         [[ -n "$CLI_INSTALL_PHPMYADMIN" ]] || die "--install-phpmyadmin requires yes or no"
         shift 2
         ;;
+      --install-virtualservers)
+        CLI_INSTALL_VIRTUALSERVERS="${2:-}"
+        [[ -n "$CLI_INSTALL_VIRTUALSERVERS" ]] || die "--install-virtualservers requires yes or no"
+        shift 2
+        ;;
       --phpmyadmin-alias)
         CLI_PHPMYADMIN_ALIAS="${2:-}"
         [[ -n "$CLI_PHPMYADMIN_ALIAS" ]] || die "--phpmyadmin-alias requires a value"
@@ -298,6 +305,7 @@ apply_cli_overrides() {
   [[ -n "$CLI_INSTALL_POSTGRESQL" ]] && export INSTALL_POSTGRESQL="$CLI_INSTALL_POSTGRESQL"
   [[ -n "$CLI_INSTALL_REDIS" ]] && export INSTALL_REDIS="$CLI_INSTALL_REDIS"
   [[ -n "$CLI_INSTALL_PHPMYADMIN" ]] && export INSTALL_PHPMYADMIN="$CLI_INSTALL_PHPMYADMIN"
+  [[ -n "$CLI_INSTALL_VIRTUALSERVERS" ]] && export INSTALL_VIRTUALSERVERS="$CLI_INSTALL_VIRTUALSERVERS"
   [[ -n "$CLI_PHPMYADMIN_ALIAS" ]] && export PHPMYADMIN_ALIAS="$CLI_PHPMYADMIN_ALIAS"
   [[ -n "$CLI_ENABLE_UNIVERSE" ]] && export ENABLE_UNIVERSE="$CLI_ENABLE_UNIVERSE"
   [[ -n "$CLI_ENABLE_PPA_ONDREJ_PHP" ]] && export ENABLE_PPA_ONDREJ_PHP="$CLI_ENABLE_PPA_ONDREJ_PHP"
@@ -330,6 +338,7 @@ bootstrap_defaults() {
   export INSTALL_POSTGRESQL="${INSTALL_POSTGRESQL:-yes}"
   export INSTALL_REDIS="${INSTALL_REDIS:-yes}"
   export INSTALL_PHPMYADMIN="${INSTALL_PHPMYADMIN:-no}"
+  export INSTALL_VIRTUALSERVERS="${INSTALL_VIRTUALSERVERS:-no}"
   export PHPMYADMIN_ALIAS="${PHPMYADMIN_ALIAS:-/phpmyadmin}"
   export ENABLE_UNIVERSE="${ENABLE_UNIVERSE:-yes}"
   export ENABLE_PPA_ONDREJ_PHP="${ENABLE_PPA_ONDREJ_PHP:-yes}"

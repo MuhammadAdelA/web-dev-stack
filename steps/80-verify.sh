@@ -32,6 +32,21 @@ verify_phpmyadmin_local() {
   verify_command "phpmyadmin-http" "curl -fsSI http://127.0.0.1${PHPMYADMIN_ALIAS}"
 }
 
+verify_virtualservers_helper() {
+  if ! is_yes "$INSTALL_VIRTUALSERVERS"; then
+    return 0
+  fi
+  verify_command "virtualservers" "virtualservers --help"
+}
+
+verify_apache_php_binding() {
+  if [[ "$WEBSERVER" != "apache" ]] || ! is_yes "$INSTALL_PHP"; then
+    return 0
+  fi
+
+  verify_command "apache-php-module" "a2query -m php${PHP_DEFAULT_VERSION}"
+}
+
 step_main() {
   local key="80-verify"
   if skip_if_done "$key"; then return 0; fi
@@ -79,6 +94,8 @@ step_main() {
   is_yes "$INSTALL_POSTGRESQL" && { verify_command "psql" "psql --version"; verify_service "postgresql"; }
   is_yes "$INSTALL_REDIS" && { verify_command "redis-server" "redis-server --version"; verify_service "redis-server"; }
 
+  verify_apache_php_binding
   verify_phpmyadmin_local
+  verify_virtualservers_helper
   mark_done "$key"
 }

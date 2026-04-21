@@ -27,6 +27,7 @@ step_main() {
     if is_yes "$INSTALL_PHPMYADMIN"; then
       prompt_with_default PHPMYADMIN_ALIAS "phpMyAdmin URL alias" "$PHPMYADMIN_ALIAS"
     fi
+    prompt_yes_no INSTALL_VIRTUALSERVERS "Install virtualservers helper tool" "$INSTALL_VIRTUALSERVERS"
   else
     PHP_VERSIONS="$(normalize_csv_spaces "$PHP_VERSIONS")"
   fi

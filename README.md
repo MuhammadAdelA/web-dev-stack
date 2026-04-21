@@ -18,6 +18,7 @@ A standalone post-golden-image bootstrap kit for Ubuntu 24.04+ that prepares a g
   - PostgreSQL
   - Redis
   - phpMyAdmin
+  - virtualservers helper tool (Apache/Nginx vhost scaffolding)
 
 ## Quick start
 
@@ -47,7 +48,7 @@ sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --non-interacti
 sudo ./bootstrap.sh --config configs/apache-php-mariadb-phpmyadmin.env --non-interactive
 
 # Scenario 3: Minimal Node-only environment
-sudo BOOTSTRAP_NON_INTERACTIVE=yes WEBSERVER=none INSTALL_PHP=no INSTALL_COMPOSER=no INSTALL_NODE=yes NODE_MAJOR=22 INSTALL_PNPM=yes INSTALL_YARN=no DB_SERVER=none INSTALL_POSTGRESQL=no INSTALL_REDIS=no INSTALL_PHPMYADMIN=no ./bootstrap.sh
+sudo BOOTSTRAP_NON_INTERACTIVE=yes WEBSERVER=none INSTALL_PHP=no INSTALL_COMPOSER=no INSTALL_NODE=yes NODE_MAJOR=22 INSTALL_PNPM=yes INSTALL_YARN=no DB_SERVER=none INSTALL_POSTGRESQL=no INSTALL_REDIS=no INSTALL_PHPMYADMIN=no INSTALL_VIRTUALSERVERS=no ./bootstrap.sh
 
 # Re-run only verification on an already prepared machine
 sudo ./bootstrap.sh --only 80-verify.sh --non-interactive
@@ -86,7 +87,8 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
   --db-server none \
   --install-postgresql yes \
   --install-redis yes \
-  --install-phpmyadmin no
+  --install-phpmyadmin no \
+  --install-virtualservers yes
 ```
 
 Force real execution when a config enables dry-run:
@@ -105,6 +107,14 @@ Common option flags:
 - `--install-node yes|no`, `--node-major <version>`, `--install-pnpm yes|no`, `--install-yarn yes|no`
 - `--db-server mysql|mariadb|none`, `--install-postgresql yes|no`, `--install-redis yes|no`
 - `--install-phpmyadmin yes|no`, `--phpmyadmin-alias /phpmyadmin`
+- `--install-virtualservers yes|no`
+
+Use the virtualservers helper after installation:
+
+```bash
+# Create config files for a local dev site (without auto-enabling them)
+sudo virtualservers create app.local /var/www/app.local nginx
+```
 
 Use a bundled config profile with the online installer:
 
@@ -148,4 +158,6 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 - `DEV_USER` defaults dynamically to `SUDO_USER`, then `USER`, then `root`; `COMPOSER_DEV_USER` defaults to `DEV_USER`.
 - Composer verification prefers running as a non-root dev user. If that user does not exist, verification falls back to `COMPOSER_ALLOW_SUPERUSER=1`.
 - phpMyAdmin is optional and requires PHP plus Apache or Nginx, and a MySQL-compatible server.
+- virtualservers is optional and installs `/usr/local/bin/virtualservers` for scaffolding Apache/Nginx site files.
+- For Apache + PHP, the bootstrap explicitly enables `php${PHP_DEFAULT_VERSION}` and verifies it with `a2query`.
 - For Nginx, the script writes a reusable snippet to `/etc/nginx/snippets/phpmyadmin.conf`.
