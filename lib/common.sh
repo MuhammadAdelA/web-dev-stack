@@ -139,6 +139,17 @@ safe_service_is_active() {
   systemctl is-active --quiet "$1" >/dev/null 2>&1
 }
 
+reload_or_restart_service() {
+  local service="$1"
+  run_bash "Reloading or restarting $service" "
+if systemctl is-active --quiet '$service'; then
+  systemctl reload '$service' || systemctl restart '$service'
+else
+  systemctl restart '$service'
+fi
+"
+}
+
 set_timezone_if_needed() {
   [[ -n "${BOOTSTRAP_TIMEZONE:-}" ]] || return 0
   run_cmd "Setting timezone to $BOOTSTRAP_TIMEZONE" timedatectl set-timezone "$BOOTSTRAP_TIMEZONE"

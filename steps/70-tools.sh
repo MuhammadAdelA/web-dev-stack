@@ -282,11 +282,11 @@ step_main() {
         ensure_apache_php_handler_helper
         configure_apache_php_handler
         configure_apache_phpmyadmin_alias
-        run_cmd "Reloading Apache" systemctl reload apache2
+        reload_or_restart_service apache2
         ;;
       nginx)
         configure_nginx_phpmyadmin_alias
-        run_cmd "Reloading Nginx" systemctl reload nginx
+        reload_or_restart_service nginx
         ;;
     esac
   else

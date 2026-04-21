@@ -57,13 +57,13 @@ step_main() {
         configure_apache_php_handler
       fi
       run_cmd "Enabling Apache" systemctl enable apache2
-      run_cmd "Starting Apache" systemctl restart apache2
+      reload_or_restart_service apache2
       ;;
     nginx)
       install_packages "Installing Nginx" nginx
       ensure_web_root_owned_by_dev_user
       run_cmd "Enabling Nginx" systemctl enable nginx
-      run_cmd "Starting Nginx" systemctl restart nginx
+      reload_or_restart_service nginx
       ;;
     none)
       log_info "Skipping web server installation"
