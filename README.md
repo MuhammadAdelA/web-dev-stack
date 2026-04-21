@@ -32,6 +32,26 @@ Dry-run example:
 sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --dry-run
 ```
 
+## Online installer
+
+Run directly from GitHub (default branch):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --dry-run
+```
+
+Run a real install:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive
+```
+
+Pin a specific branch or tag:
+
+```bash
+REF=<branch-or-tag> curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --dry-run
+```
+
 ## Available steps
 
 - `00-preflight.sh`
