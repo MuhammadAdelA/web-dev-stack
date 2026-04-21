@@ -69,6 +69,43 @@ Run a real install:
 curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive
 ```
 
+Run with flags only (no config file):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- \
+  --non-interactive \
+  --webserver nginx \
+  --install-php yes \
+  --php-versions "8.2 8.3" \
+  --php-default 8.3 \
+  --install-composer yes \
+  --install-node yes \
+  --node-major 22 \
+  --install-pnpm yes \
+  --install-yarn no \
+  --db-server none \
+  --install-postgresql yes \
+  --install-redis yes \
+  --install-phpmyadmin no
+```
+
+Force real execution when a config enables dry-run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --config configs/nginx-php-postgres-node.env --no-dry-run --non-interactive
+```
+
+Common option flags:
+
+- `--no-dry-run` or `--dry-run`
+- `--non-interactive` or `--interactive`
+- `--webserver apache|nginx|none`
+- `--install-php yes|no`, `--php-versions "..."`
+- `--install-composer yes|no`, `--composer-dev-user <user>`
+- `--install-node yes|no`, `--node-major <version>`, `--install-pnpm yes|no`, `--install-yarn yes|no`
+- `--db-server mysql|mariadb|none`, `--install-postgresql yes|no`, `--install-redis yes|no`
+- `--install-phpmyadmin yes|no`, `--phpmyadmin-alias /phpmyadmin`
+
 Use a bundled config profile with the online installer:
 
 ```bash

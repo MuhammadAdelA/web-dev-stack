@@ -6,7 +6,11 @@ log_raw() {
   local msg="$*"
   local ts
   ts="$(date '+%Y-%m-%d %H:%M:%S')"
-  printf '[%s] [%s] %s\n' "$ts" "$level" "$msg" | tee -a "$LOG_FILE" >&2
+  if [[ -n "${LOG_FILE:-}" ]]; then
+    printf '[%s] [%s] %s\n' "$ts" "$level" "$msg" | tee -a "$LOG_FILE" >&2
+  else
+    printf '[%s] [%s] %s\n' "$ts" "$level" "$msg" >&2
+  fi
 }
 
 log_info() { log_raw INFO "$*"; }

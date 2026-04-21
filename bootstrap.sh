@@ -23,6 +23,27 @@ UNTIL_STEP=""
 LIST_ONLY="no"
 FORCE_REPAIR="${FORCE_REPAIR:-no}"
 SKIP_EXISTING="${SKIP_EXISTING:-yes}"
+CLI_BOOTSTRAP_TIMEZONE=""
+CLI_DEV_USER=""
+CLI_WEBSERVER=""
+CLI_INSTALL_PHP=""
+CLI_PHP_VERSIONS=""
+CLI_PHP_DEFAULT_VERSION=""
+CLI_INSTALL_COMPOSER=""
+CLI_COMPOSER_DEV_USER=""
+CLI_INSTALL_NODE=""
+CLI_NODE_MAJOR=""
+CLI_INSTALL_PNPM=""
+CLI_INSTALL_YARN=""
+CLI_DB_SERVER=""
+CLI_INSTALL_POSTGRESQL=""
+CLI_INSTALL_REDIS=""
+CLI_INSTALL_PHPMYADMIN=""
+CLI_PHPMYADMIN_ALIAS=""
+CLI_ENABLE_UNIVERSE=""
+CLI_ENABLE_PPA_ONDREJ_PHP=""
+CLI_ENABLE_NODESOURCE=""
+CLI_PRIMARY_PHP_EXTENSIONS=""
 
 DEFAULT_STEP_ORDER=(
   "00-preflight.sh"
@@ -44,7 +65,30 @@ Usage: ./bootstrap.sh [options]
 Options:
   --config <file>       Load configuration file.
   --dry-run             Print actions without executing them.
+  --no-dry-run          Force real execution (overrides config/env dry-run).
   --non-interactive     Do not prompt; require config/env values.
+  --interactive         Allow prompts (overrides config/env non-interactive).
+  --timezone <tz>       Set BOOTSTRAP_TIMEZONE (for example UTC).
+  --dev-user <user>     Set DEV_USER.
+  --webserver <value>   Set WEBSERVER (apache/nginx/none).
+  --install-php <yn>    Set INSTALL_PHP (yes/no).
+  --php-versions <list> Set PHP_VERSIONS (comma or space separated; quote spaces).
+  --php-default <ver>   Set PHP_DEFAULT_VERSION.
+  --install-composer <yn>    Set INSTALL_COMPOSER (yes/no).
+  --composer-dev-user <user> Set COMPOSER_DEV_USER.
+  --install-node <yn>   Set INSTALL_NODE (yes/no).
+  --node-major <ver>    Set NODE_MAJOR.
+  --install-pnpm <yn>   Set INSTALL_PNPM (yes/no).
+  --install-yarn <yn>   Set INSTALL_YARN (yes/no).
+  --db-server <value>   Set DB_SERVER (mysql/mariadb/none).
+  --install-postgresql <yn>  Set INSTALL_POSTGRESQL (yes/no).
+  --install-redis <yn>  Set INSTALL_REDIS (yes/no).
+  --install-phpmyadmin <yn>  Set INSTALL_PHPMYADMIN (yes/no).
+  --phpmyadmin-alias <path>  Set PHPMYADMIN_ALIAS.
+  --enable-universe <yn>     Set ENABLE_UNIVERSE (yes/no).
+  --enable-ppa-ondrej-php <yn> Set ENABLE_PPA_ONDREJ_PHP (yes/no).
+  --enable-nodesource <yn>   Set ENABLE_NODESOURCE (yes/no).
+  --primary-php-extensions <list> Set PRIMARY_PHP_EXTENSIONS.
   --only <step>         Run one step only.
   --from <step>         Start from a given step.
   --until <step>        Stop after a given step.
@@ -66,10 +110,125 @@ parse_args() {
         CLI_DRY_RUN_SET="yes"
         shift
         ;;
+      --no-dry-run)
+        DRY_RUN="no"
+        CLI_DRY_RUN_SET="yes"
+        shift
+        ;;
       --non-interactive)
         NON_INTERACTIVE="yes"
         CLI_NON_INTERACTIVE_SET="yes"
         shift
+        ;;
+      --interactive)
+        NON_INTERACTIVE="no"
+        CLI_NON_INTERACTIVE_SET="yes"
+        shift
+        ;;
+      --timezone)
+        CLI_BOOTSTRAP_TIMEZONE="${2:-}"
+        [[ -n "$CLI_BOOTSTRAP_TIMEZONE" ]] || die "--timezone requires a value"
+        shift 2
+        ;;
+      --dev-user)
+        CLI_DEV_USER="${2:-}"
+        [[ -n "$CLI_DEV_USER" ]] || die "--dev-user requires a value"
+        shift 2
+        ;;
+      --webserver)
+        CLI_WEBSERVER="${2:-}"
+        [[ -n "$CLI_WEBSERVER" ]] || die "--webserver requires a value"
+        shift 2
+        ;;
+      --install-php)
+        CLI_INSTALL_PHP="${2:-}"
+        [[ -n "$CLI_INSTALL_PHP" ]] || die "--install-php requires yes or no"
+        shift 2
+        ;;
+      --php-versions)
+        CLI_PHP_VERSIONS="${2:-}"
+        [[ -n "$CLI_PHP_VERSIONS" ]] || die "--php-versions requires a value"
+        shift 2
+        ;;
+      --php-default)
+        CLI_PHP_DEFAULT_VERSION="${2:-}"
+        [[ -n "$CLI_PHP_DEFAULT_VERSION" ]] || die "--php-default requires a version"
+        shift 2
+        ;;
+      --install-composer)
+        CLI_INSTALL_COMPOSER="${2:-}"
+        [[ -n "$CLI_INSTALL_COMPOSER" ]] || die "--install-composer requires yes or no"
+        shift 2
+        ;;
+      --composer-dev-user)
+        CLI_COMPOSER_DEV_USER="${2:-}"
+        [[ -n "$CLI_COMPOSER_DEV_USER" ]] || die "--composer-dev-user requires a value"
+        shift 2
+        ;;
+      --install-node)
+        CLI_INSTALL_NODE="${2:-}"
+        [[ -n "$CLI_INSTALL_NODE" ]] || die "--install-node requires yes or no"
+        shift 2
+        ;;
+      --node-major)
+        CLI_NODE_MAJOR="${2:-}"
+        [[ -n "$CLI_NODE_MAJOR" ]] || die "--node-major requires a version"
+        shift 2
+        ;;
+      --install-pnpm)
+        CLI_INSTALL_PNPM="${2:-}"
+        [[ -n "$CLI_INSTALL_PNPM" ]] || die "--install-pnpm requires yes or no"
+        shift 2
+        ;;
+      --install-yarn)
+        CLI_INSTALL_YARN="${2:-}"
+        [[ -n "$CLI_INSTALL_YARN" ]] || die "--install-yarn requires yes or no"
+        shift 2
+        ;;
+      --db-server)
+        CLI_DB_SERVER="${2:-}"
+        [[ -n "$CLI_DB_SERVER" ]] || die "--db-server requires a value"
+        shift 2
+        ;;
+      --install-postgresql)
+        CLI_INSTALL_POSTGRESQL="${2:-}"
+        [[ -n "$CLI_INSTALL_POSTGRESQL" ]] || die "--install-postgresql requires yes or no"
+        shift 2
+        ;;
+      --install-redis)
+        CLI_INSTALL_REDIS="${2:-}"
+        [[ -n "$CLI_INSTALL_REDIS" ]] || die "--install-redis requires yes or no"
+        shift 2
+        ;;
+      --install-phpmyadmin)
+        CLI_INSTALL_PHPMYADMIN="${2:-}"
+        [[ -n "$CLI_INSTALL_PHPMYADMIN" ]] || die "--install-phpmyadmin requires yes or no"
+        shift 2
+        ;;
+      --phpmyadmin-alias)
+        CLI_PHPMYADMIN_ALIAS="${2:-}"
+        [[ -n "$CLI_PHPMYADMIN_ALIAS" ]] || die "--phpmyadmin-alias requires a value"
+        shift 2
+        ;;
+      --enable-universe)
+        CLI_ENABLE_UNIVERSE="${2:-}"
+        [[ -n "$CLI_ENABLE_UNIVERSE" ]] || die "--enable-universe requires yes or no"
+        shift 2
+        ;;
+      --enable-ppa-ondrej-php)
+        CLI_ENABLE_PPA_ONDREJ_PHP="${2:-}"
+        [[ -n "$CLI_ENABLE_PPA_ONDREJ_PHP" ]] || die "--enable-ppa-ondrej-php requires yes or no"
+        shift 2
+        ;;
+      --enable-nodesource)
+        CLI_ENABLE_NODESOURCE="${2:-}"
+        [[ -n "$CLI_ENABLE_NODESOURCE" ]] || die "--enable-nodesource requires yes or no"
+        shift 2
+        ;;
+      --primary-php-extensions)
+        CLI_PRIMARY_PHP_EXTENSIONS="${2:-}"
+        [[ -n "$CLI_PRIMARY_PHP_EXTENSIONS" ]] || die "--primary-php-extensions requires a value"
+        shift 2
         ;;
       --only)
         ONLY_STEP="${2:-}"
@@ -120,6 +279,31 @@ load_configs() {
   if [[ "$CLI_NON_INTERACTIVE_SET" != "yes" && -n "${BOOTSTRAP_NON_INTERACTIVE:-}" ]]; then
     NON_INTERACTIVE="$BOOTSTRAP_NON_INTERACTIVE"
   fi
+}
+
+apply_cli_overrides() {
+  [[ -n "$CLI_BOOTSTRAP_TIMEZONE" ]] && export BOOTSTRAP_TIMEZONE="$CLI_BOOTSTRAP_TIMEZONE"
+  [[ -n "$CLI_DEV_USER" ]] && export DEV_USER="$CLI_DEV_USER"
+  [[ -n "$CLI_WEBSERVER" ]] && export WEBSERVER="$CLI_WEBSERVER"
+  [[ -n "$CLI_INSTALL_PHP" ]] && export INSTALL_PHP="$CLI_INSTALL_PHP"
+  [[ -n "$CLI_PHP_VERSIONS" ]] && export PHP_VERSIONS="$CLI_PHP_VERSIONS"
+  [[ -n "$CLI_PHP_DEFAULT_VERSION" ]] && export PHP_DEFAULT_VERSION="$CLI_PHP_DEFAULT_VERSION"
+  [[ -n "$CLI_INSTALL_COMPOSER" ]] && export INSTALL_COMPOSER="$CLI_INSTALL_COMPOSER"
+  [[ -n "$CLI_COMPOSER_DEV_USER" ]] && export COMPOSER_DEV_USER="$CLI_COMPOSER_DEV_USER"
+  [[ -n "$CLI_INSTALL_NODE" ]] && export INSTALL_NODE="$CLI_INSTALL_NODE"
+  [[ -n "$CLI_NODE_MAJOR" ]] && export NODE_MAJOR="$CLI_NODE_MAJOR"
+  [[ -n "$CLI_INSTALL_PNPM" ]] && export INSTALL_PNPM="$CLI_INSTALL_PNPM"
+  [[ -n "$CLI_INSTALL_YARN" ]] && export INSTALL_YARN="$CLI_INSTALL_YARN"
+  [[ -n "$CLI_DB_SERVER" ]] && export DB_SERVER="$CLI_DB_SERVER"
+  [[ -n "$CLI_INSTALL_POSTGRESQL" ]] && export INSTALL_POSTGRESQL="$CLI_INSTALL_POSTGRESQL"
+  [[ -n "$CLI_INSTALL_REDIS" ]] && export INSTALL_REDIS="$CLI_INSTALL_REDIS"
+  [[ -n "$CLI_INSTALL_PHPMYADMIN" ]] && export INSTALL_PHPMYADMIN="$CLI_INSTALL_PHPMYADMIN"
+  [[ -n "$CLI_PHPMYADMIN_ALIAS" ]] && export PHPMYADMIN_ALIAS="$CLI_PHPMYADMIN_ALIAS"
+  [[ -n "$CLI_ENABLE_UNIVERSE" ]] && export ENABLE_UNIVERSE="$CLI_ENABLE_UNIVERSE"
+  [[ -n "$CLI_ENABLE_PPA_ONDREJ_PHP" ]] && export ENABLE_PPA_ONDREJ_PHP="$CLI_ENABLE_PPA_ONDREJ_PHP"
+  [[ -n "$CLI_ENABLE_NODESOURCE" ]] && export ENABLE_NODESOURCE="$CLI_ENABLE_NODESOURCE"
+  [[ -n "$CLI_PRIMARY_PHP_EXTENSIONS" ]] && export PRIMARY_PHP_EXTENSIONS="$CLI_PRIMARY_PHP_EXTENSIONS"
+  return 0
 }
 
 bootstrap_defaults() {
@@ -269,6 +453,7 @@ main() {
     exit 0
   fi
   load_configs
+  apply_cli_overrides
   bootstrap_defaults
   acquire_lock
   trap 'release_lock' EXIT
