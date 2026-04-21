@@ -40,6 +40,8 @@ Run directly from GitHub (default branch):
 curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --dry-run
 ```
 
+When run via a non-interactive stdin stream (for example `curl | bash`), the bootstrap auto-enables non-interactive mode and uses env/config/default values.
+
 Run a real install:
 
 ```bash

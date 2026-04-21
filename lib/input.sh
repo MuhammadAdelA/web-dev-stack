@@ -8,7 +8,10 @@ prompt_with_default() {
     printf -v "$var_name" '%s' "$default"
     return 0
   fi
-  read -r -p "$prompt [$default]: " value
+  if ! read -r -p "$prompt [$default]: " value; then
+    log_warn "Input unavailable for '$prompt'; using default: $default"
+    value="$default"
+  fi
   value="${value:-$default}"
   printf -v "$var_name" '%s' "$value"
 }

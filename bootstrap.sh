@@ -274,6 +274,11 @@ main() {
   trap 'release_lock' EXIT
   trap 'on_error $LINENO "$BASH_COMMAND"' ERR
 
+  if [[ "$BOOTSTRAP_NON_INTERACTIVE" != "yes" && ! -t 0 ]]; then
+    export BOOTSTRAP_NON_INTERACTIVE="yes"
+    log_warn "STDIN is not a TTY; auto-enabling non-interactive mode with current/default values"
+  fi
+
   select_steps
   log_info "Run ID: $RUN_ID"
   log_info "Log file: $LOG_FILE"
