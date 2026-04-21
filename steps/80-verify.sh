@@ -25,11 +25,13 @@ verify_phpmyadmin_local() {
 
   if [[ "$BOOTSTRAP_DRY_RUN" == "yes" ]]; then
     verify_command "phpmyadmin-http" "curl -fsSI http://127.0.0.1${PHPMYADMIN_ALIAS}"
+    verify_command "phpmyadmin-php-page" "curl -fsS http://127.0.0.1${PHPMYADMIN_ALIAS}/index.php | grep -qi 'phpmyadmin'"
     return 0
   fi
 
   verify_command "phpmyadmin-files" "test -d /usr/share/phpmyadmin"
   verify_command "phpmyadmin-http" "curl -fsSI http://127.0.0.1${PHPMYADMIN_ALIAS}"
+  verify_command "phpmyadmin-php-page" "curl -fsS http://127.0.0.1${PHPMYADMIN_ALIAS}/index.php | grep -qi 'phpmyadmin'"
 }
 
 verify_virtualservers_helper() {

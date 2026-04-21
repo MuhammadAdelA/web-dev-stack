@@ -132,6 +132,22 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive --only 80-verify.sh
 ```
 
+More practical use cases:
+
+```bash
+# Install only the virtualservers helper (no full-stack verify)
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --only 70-tools.sh --install-virtualservers yes --non-interactive --no-dry-run
+
+# Run tools + verify on a minimal machine without expecting web/db/php/node services
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --from 70-tools.sh --install-virtualservers yes --webserver none --install-php no --install-composer no --install-node no --db-server none --install-postgresql no --install-redis no --install-phpmyadmin no --non-interactive --no-dry-run
+
+# Apply Apache + PHP binding only
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --only 50-webservers.sh --webserver apache --install-php yes --php-default 8.3 --non-interactive --no-dry-run
+
+# Re-apply Apache + PHP + phpMyAdmin wiring and verify it
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --from 50-webservers.sh --until 80-verify.sh --webserver apache --install-php yes --php-default 8.3 --install-phpmyadmin yes --db-server mariadb --non-interactive --no-dry-run
+```
+
 Pin a specific branch or tag for the downloaded kit:
 
 ```bash
@@ -161,3 +177,22 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 - virtualservers is optional and installs `/usr/local/bin/virtualservers` for scaffolding Apache/Nginx site files.
 - For Apache + PHP, the bootstrap explicitly enables `php${PHP_DEFAULT_VERSION}` and verifies it with `a2query`.
 - For Nginx, the script writes a reusable snippet to `/etc/nginx/snippets/phpmyadmin.conf`.
+
+## Troubleshooting
+
+- `Verification failed for nginx-version` after using `--from 70-tools.sh`:
+Cause: `--from 70-tools.sh` still runs `80-verify.sh`, and defaults may expect Nginx when no config/flags are provided.
+Fix: use `--only 70-tools.sh` for tool-only install, or pass explicit flags to disable unrelated checks (`--webserver none --install-php no --install-node no --db-server none ...`).
+
+- phpMyAdmin installed but PHP is not executing through Apache:
+Cause: Apache PHP module/MPM/binding may not match the selected PHP default in partial runs.
+Fix: re-run from webserver through verify:
+`curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --from 50-webservers.sh --until 80-verify.sh --webserver apache --install-php yes --php-default 8.3 --install-phpmyadmin yes --db-server mariadb --non-interactive --no-dry-run`
+
+- `Permission denied` under `/var/log/web-dev-bootstrap` or `/var/lib/web-dev-bootstrap`:
+Cause: real mode (`--no-dry-run`) writes system paths and requires root.
+Fix: run with `sudo`.
+
+- `Another bootstrap process is already running`:
+Cause: two bootstrap commands ran concurrently.
+Fix: run one bootstrap command at a time and retry.

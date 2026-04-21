@@ -45,6 +45,38 @@ ensure_phpmyadmin_alias_helpers() {
   fi
 }
 
+ensure_apache_php_handler_helper() {
+  if declare -F configure_apache_php_handler >/dev/null; then
+    return 0
+  fi
+
+  configure_apache_php_handler() {
+    local php_module="php${PHP_DEFAULT_VERSION}"
+
+    install_packages "Ensuring Apache PHP module package for PHP $PHP_DEFAULT_VERSION" "libapache2-mod-php${PHP_DEFAULT_VERSION}"
+
+    # mod_php requires Apache prefork MPM; switch from event when needed.
+    run_bash "Ensuring Apache prefork MPM for mod_php" "
+if a2query -m mpm_event >/dev/null 2>&1; then
+  a2dismod mpm_event
+fi
+a2enmod mpm_prefork
+"
+
+    # Keep Apache PHP handler explicit and predictable on re-runs.
+    run_bash "Disabling non-default Apache PHP modules" "
+for mod_file in /etc/apache2/mods-enabled/php*.load; do
+  [ -e \"\$mod_file\" ] || continue
+  mod_name=\$(basename \"\$mod_file\" .load)
+  if [ \"\$mod_name\" != \"$php_module\" ]; then
+    a2dismod \"\$mod_name\"
+  fi
+done
+"
+    run_cmd "Enabling Apache PHP module $php_module" a2enmod "$php_module"
+  }
+}
+
 install_virtualservers_helper() {
   local tool_path="/usr/local/bin/virtualservers"
   local tool_content
@@ -220,6 +252,8 @@ step_main() {
 
     case "$WEBSERVER" in
       apache)
+        ensure_apache_php_handler_helper
+        configure_apache_php_handler
         configure_apache_phpmyadmin_alias
         run_cmd "Reloading Apache" systemctl reload apache2
         ;;
