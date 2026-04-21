@@ -32,6 +32,27 @@ Dry-run example:
 sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --dry-run
 ```
 
+## Installation examples
+
+Local checkout:
+
+```bash
+# Interactive (prompts enabled)
+sudo ./bootstrap.sh
+
+# Scenario 1: Nginx + PHP + Composer + Node + pnpm + PostgreSQL + Redis
+sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --non-interactive
+
+# Scenario 2: Apache + PHP + Composer + MariaDB + phpMyAdmin
+sudo ./bootstrap.sh --config configs/apache-php-mariadb-phpmyadmin.env --non-interactive
+
+# Scenario 3: Minimal Node-only environment
+sudo BOOTSTRAP_NON_INTERACTIVE=yes WEBSERVER=none INSTALL_PHP=no INSTALL_COMPOSER=no INSTALL_NODE=yes NODE_MAJOR=22 INSTALL_PNPM=yes INSTALL_YARN=no DB_SERVER=none INSTALL_POSTGRESQL=no INSTALL_REDIS=no INSTALL_PHPMYADMIN=no ./bootstrap.sh
+
+# Re-run only verification on an already prepared machine
+sudo ./bootstrap.sh --only 80-verify.sh --non-interactive
+```
+
 ## Online installer
 
 Run directly from GitHub (default branch):
@@ -48,10 +69,26 @@ Run a real install:
 curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive
 ```
 
-Pin a specific branch or tag:
+Use a bundled config profile with the online installer:
 
 ```bash
-REF=<branch-or-tag> curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive --config configs/nginx-php-postgres-node.env
+```
+
+Run selected steps only:
+
+```bash
+# Step range
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --dry-run --from 20-repositories.sh --until 40-runtimes.sh
+
+# Verify step only
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive --only 80-verify.sh
+```
+
+Pin a specific branch or tag for the downloaded kit:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | REF=<branch-or-tag> bash -s -- --dry-run
 ```
 
 ## Available steps
