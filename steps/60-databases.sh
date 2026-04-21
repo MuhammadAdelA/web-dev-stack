@@ -1,6 +1,68 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+sql_escape_literal() {
+  printf '%s' "$1" | sed "s/'/''/g"
+}
+
+configure_mysql_family_dev_user() {
+  local client="$1"
+  local user_sql pass_sql sql
+
+  user_sql="$(sql_escape_literal "$DB_DEV_USER")"
+  pass_sql="$(sql_escape_literal "$DB_DEV_PASSWORD")"
+  sql="CREATE USER IF NOT EXISTS '${user_sql}'@'localhost' IDENTIFIED BY '${pass_sql}'; ALTER USER '${user_sql}'@'localhost' IDENTIFIED BY '${pass_sql}'; GRANT ALL PRIVILEGES ON *.* TO '${user_sql}'@'localhost'; FLUSH PRIVILEGES;"
+
+  run_bash "Configuring ${client} dev user '$DB_DEV_USER'" "$client -e \"$sql\""
+}
+
+configure_postgresql_dev_user() {
+  local role_ident role_lit pass_lit
+
+  role_ident="$DB_DEV_USER"
+  role_lit="$(sql_escape_literal "$DB_DEV_USER")"
+  pass_lit="$(sql_escape_literal "$DB_DEV_PASSWORD")"
+
+  run_bash "Configuring PostgreSQL dev role '$DB_DEV_USER'" "
+if sudo -u postgres psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='${role_lit}'\" | grep -q 1; then
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -c \"ALTER ROLE ${role_ident} WITH LOGIN PASSWORD '${pass_lit}' CREATEDB;\"
+else
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -c \"CREATE ROLE ${role_ident} WITH LOGIN PASSWORD '${pass_lit}' CREATEDB;\"
+fi
+"
+
+  run_bash "Ensuring PostgreSQL database '$DB_DEV_USER' exists" "
+if ! sudo -u postgres psql -tAc \"SELECT 1 FROM pg_database WHERE datname='${role_lit}'\" | grep -q 1; then
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -c \"CREATE DATABASE ${role_ident} OWNER ${role_ident};\"
+fi
+"
+}
+
+configure_dev_db_credentials() {
+  if ! is_yes "$CONFIGURE_DEV_DB_USER"; then
+    log_info "Skipping dev DB user/password configuration"
+    return 0
+  fi
+
+  case "$DB_SERVER" in
+    mysql)
+      configure_mysql_family_dev_user mysql
+      ;;
+    mariadb)
+      configure_mysql_family_dev_user mariadb
+      ;;
+    none)
+      log_info "Skipping MySQL/MariaDB dev user setup because DB_SERVER=none"
+      ;;
+  esac
+
+  if is_yes "$INSTALL_POSTGRESQL"; then
+    configure_postgresql_dev_user
+  else
+    log_info "Skipping PostgreSQL dev user setup"
+  fi
+}
+
 step_main() {
   local key="60-databases"
   if skip_if_done "$key"; then return 0; fi
@@ -26,6 +88,8 @@ step_main() {
     run_cmd "Enabling PostgreSQL" systemctl enable postgresql
     run_cmd "Starting PostgreSQL" systemctl restart postgresql
   fi
+
+  configure_dev_db_credentials
 
   if is_yes "$INSTALL_REDIS"; then
     install_packages "Installing Redis" redis-server redis-tools

@@ -106,6 +106,7 @@ Common option flags:
 - `--install-composer yes|no`, `--composer-dev-user <user>`
 - `--install-node yes|no`, `--node-major <version>`, `--install-pnpm yes|no`, `--install-yarn yes|no`
 - `--db-server mysql|mariadb|none`, `--install-postgresql yes|no`, `--install-redis yes|no`
+- `--configure-dev-db-user yes|no`, `--db-dev-user <user>`, `--db-dev-password <password>`
 - `--install-phpmyadmin yes|no`, `--phpmyadmin-alias /phpmyadmin`
 - `--install-virtualservers yes|no`
 
@@ -146,6 +147,9 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 
 # Re-apply Apache + PHP + phpMyAdmin wiring and verify it
 curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --from 50-webservers.sh --until 80-verify.sh --webserver apache --install-php yes --php-default 8.3 --install-phpmyadmin yes --db-server mariadb --non-interactive --no-dry-run
+
+# Create DB dev users with custom password
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --non-interactive --db-server mariadb --install-postgresql yes --configure-dev-db-user yes --db-dev-password "StrongPass!234" --no-dry-run
 ```
 
 Pin a specific branch or tag for the downloaded kit:
@@ -175,8 +179,11 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 - Composer verification prefers running as a non-root dev user. If that user does not exist, verification falls back to `COMPOSER_ALLOW_SUPERUSER=1`.
 - phpMyAdmin is optional and requires PHP plus Apache or Nginx, and a MySQL-compatible server.
 - virtualservers is optional and installs `/usr/local/bin/virtualservers` for scaffolding Apache/Nginx site files.
+- `/var/www` ownership is normalized to `DEV_USER:www-data` when web servers or virtualservers setup runs.
 - For Apache + PHP, the bootstrap explicitly enables `php${PHP_DEFAULT_VERSION}` and verifies it with `a2query`.
 - For Nginx, the script writes a reusable snippet to `/etc/nginx/snippets/phpmyadmin.conf`.
+- By default, DB dev credentials are configured when relational DBs are installed:
+  `DB_DEV_USER=$DEV_USER`, `DB_DEV_PASSWORD=Password123` (override in env/flags).
 
 ## Troubleshooting
 
@@ -196,3 +203,8 @@ Fix: run with `sudo`.
 - `Another bootstrap process is already running`:
 Cause: two bootstrap commands ran concurrently.
 Fix: run one bootstrap command at a time and retry.
+
+- MySQL/MariaDB/PostgreSQL dev login failed in verify:
+Cause: the configured password differs from defaults or DB role/user was changed manually.
+Fix: rerun step 60 with explicit DB credentials, for example:
+`sudo ./bootstrap.sh --only 60-databases.sh --non-interactive --no-dry-run --configure-dev-db-user yes --db-dev-user "$USER" --db-dev-password "Password123"`

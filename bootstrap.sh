@@ -36,6 +36,9 @@ CLI_NODE_MAJOR=""
 CLI_INSTALL_PNPM=""
 CLI_INSTALL_YARN=""
 CLI_DB_SERVER=""
+CLI_CONFIGURE_DEV_DB_USER=""
+CLI_DB_DEV_USER=""
+CLI_DB_DEV_PASSWORD=""
 CLI_INSTALL_POSTGRESQL=""
 CLI_INSTALL_REDIS=""
 CLI_INSTALL_PHPMYADMIN=""
@@ -82,6 +85,9 @@ Options:
   --install-pnpm <yn>   Set INSTALL_PNPM (yes/no).
   --install-yarn <yn>   Set INSTALL_YARN (yes/no).
   --db-server <value>   Set DB_SERVER (mysql/mariadb/none).
+  --configure-dev-db-user <yn> Set CONFIGURE_DEV_DB_USER (yes/no).
+  --db-dev-user <user>  Set DB_DEV_USER.
+  --db-dev-password <password> Set DB_DEV_PASSWORD.
   --install-postgresql <yn>  Set INSTALL_POSTGRESQL (yes/no).
   --install-redis <yn>  Set INSTALL_REDIS (yes/no).
   --install-phpmyadmin <yn>  Set INSTALL_PHPMYADMIN (yes/no).
@@ -190,6 +196,21 @@ parse_args() {
       --db-server)
         CLI_DB_SERVER="${2:-}"
         [[ -n "$CLI_DB_SERVER" ]] || die "--db-server requires a value"
+        shift 2
+        ;;
+      --configure-dev-db-user)
+        CLI_CONFIGURE_DEV_DB_USER="${2:-}"
+        [[ -n "$CLI_CONFIGURE_DEV_DB_USER" ]] || die "--configure-dev-db-user requires yes or no"
+        shift 2
+        ;;
+      --db-dev-user)
+        CLI_DB_DEV_USER="${2:-}"
+        [[ -n "$CLI_DB_DEV_USER" ]] || die "--db-dev-user requires a value"
+        shift 2
+        ;;
+      --db-dev-password)
+        CLI_DB_DEV_PASSWORD="${2:-}"
+        [[ -n "$CLI_DB_DEV_PASSWORD" ]] || die "--db-dev-password requires a value"
         shift 2
         ;;
       --install-postgresql)
@@ -302,6 +323,9 @@ apply_cli_overrides() {
   [[ -n "$CLI_INSTALL_PNPM" ]] && export INSTALL_PNPM="$CLI_INSTALL_PNPM"
   [[ -n "$CLI_INSTALL_YARN" ]] && export INSTALL_YARN="$CLI_INSTALL_YARN"
   [[ -n "$CLI_DB_SERVER" ]] && export DB_SERVER="$CLI_DB_SERVER"
+  [[ -n "$CLI_CONFIGURE_DEV_DB_USER" ]] && export CONFIGURE_DEV_DB_USER="$CLI_CONFIGURE_DEV_DB_USER"
+  [[ -n "$CLI_DB_DEV_USER" ]] && export DB_DEV_USER="$CLI_DB_DEV_USER"
+  [[ -n "$CLI_DB_DEV_PASSWORD" ]] && export DB_DEV_PASSWORD="$CLI_DB_DEV_PASSWORD"
   [[ -n "$CLI_INSTALL_POSTGRESQL" ]] && export INSTALL_POSTGRESQL="$CLI_INSTALL_POSTGRESQL"
   [[ -n "$CLI_INSTALL_REDIS" ]] && export INSTALL_REDIS="$CLI_INSTALL_REDIS"
   [[ -n "$CLI_INSTALL_PHPMYADMIN" ]] && export INSTALL_PHPMYADMIN="$CLI_INSTALL_PHPMYADMIN"
@@ -335,6 +359,9 @@ bootstrap_defaults() {
   export INSTALL_PNPM="${INSTALL_PNPM:-yes}"
   export INSTALL_YARN="${INSTALL_YARN:-no}"
   export DB_SERVER="${DB_SERVER:-mariadb}"
+  export CONFIGURE_DEV_DB_USER="${CONFIGURE_DEV_DB_USER:-yes}"
+  export DB_DEV_USER="${DB_DEV_USER:-$DEV_USER}"
+  export DB_DEV_PASSWORD="${DB_DEV_PASSWORD:-Password123}"
   export INSTALL_POSTGRESQL="${INSTALL_POSTGRESQL:-yes}"
   export INSTALL_REDIS="${INSTALL_REDIS:-yes}"
   export INSTALL_PHPMYADMIN="${INSTALL_PHPMYADMIN:-no}"

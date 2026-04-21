@@ -36,6 +36,15 @@ validate_choices() {
     *) die "DB_SERVER must be mysql, mariadb, or none" ;;
   esac
 
+  if is_yes "$CONFIGURE_DEV_DB_USER"; then
+    [[ -n "$DB_DEV_USER" ]] || die "CONFIGURE_DEV_DB_USER=yes requires DB_DEV_USER"
+    [[ -n "$DB_DEV_PASSWORD" ]] || die "CONFIGURE_DEV_DB_USER=yes requires DB_DEV_PASSWORD"
+    [[ "$DB_DEV_USER" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "DB_DEV_USER must start with a letter/underscore and use only letters, numbers, or underscores"
+    [[ "$DB_DEV_PASSWORD" != *"'"* ]] || die "DB_DEV_PASSWORD must not contain single quotes"
+    [[ "$DB_DEV_PASSWORD" != *'"'* ]] || die "DB_DEV_PASSWORD must not contain double quotes"
+    [[ "$DB_DEV_PASSWORD" != *"\\"* ]] || die "DB_DEV_PASSWORD must not contain backslashes"
+  fi
+
   if is_yes "$INSTALL_PHPMYADMIN"; then
     [[ "$DB_SERVER" != "none" ]] || die "phpMyAdmin requires DB_SERVER=mysql or mariadb"
     [[ "$WEBSERVER" != "none" ]] || die "phpMyAdmin requires Apache or Nginx"
@@ -69,6 +78,9 @@ Bootstrap plan:
   INSTALL_PNPM=$INSTALL_PNPM
   INSTALL_YARN=$INSTALL_YARN
   DB_SERVER=$DB_SERVER
+  CONFIGURE_DEV_DB_USER=$CONFIGURE_DEV_DB_USER
+  DB_DEV_USER=$DB_DEV_USER
+  DB_DEV_PASSWORD=<hidden>
   INSTALL_POSTGRESQL=$INSTALL_POSTGRESQL
   INSTALL_REDIS=$INSTALL_REDIS
   INSTALL_PHPMYADMIN=$INSTALL_PHPMYADMIN

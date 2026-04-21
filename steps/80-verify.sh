@@ -41,6 +41,25 @@ verify_virtualservers_helper() {
   verify_command "virtualservers" "virtualservers --help"
 }
 
+verify_db_dev_credentials() {
+  if ! is_yes "$CONFIGURE_DEV_DB_USER"; then
+    return 0
+  fi
+
+  case "$DB_SERVER" in
+    mysql)
+      verify_command "mysql-dev-login" "mysql -u\"$DB_DEV_USER\" -p\"$DB_DEV_PASSWORD\" -e \"SELECT 1;\""
+      ;;
+    mariadb)
+      verify_command "mariadb-dev-login" "mariadb -u\"$DB_DEV_USER\" -p\"$DB_DEV_PASSWORD\" -e \"SELECT 1;\""
+      ;;
+  esac
+
+  if is_yes "$INSTALL_POSTGRESQL"; then
+    verify_command "postgresql-dev-login" "PGPASSWORD=\"$DB_DEV_PASSWORD\" psql -h 127.0.0.1 -U \"$DB_DEV_USER\" -d \"$DB_DEV_USER\" -c 'SELECT 1;'"
+  fi
+}
+
 verify_apache_php_binding() {
   if [[ "$WEBSERVER" != "apache" ]] || ! is_yes "$INSTALL_PHP"; then
     return 0
@@ -96,6 +115,7 @@ step_main() {
   is_yes "$INSTALL_POSTGRESQL" && { verify_command "psql" "psql --version"; verify_service "postgresql"; }
   is_yes "$INSTALL_REDIS" && { verify_command "redis-server" "redis-server --version"; verify_service "redis-server"; }
 
+  verify_db_dev_credentials
   verify_apache_php_binding
   verify_phpmyadmin_local
   verify_virtualservers_helper

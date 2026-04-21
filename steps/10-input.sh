@@ -21,6 +21,11 @@ step_main() {
       prompt_yes_no INSTALL_YARN "Install Yarn" "$INSTALL_YARN"
     fi
     prompt_with_default DB_SERVER "Primary DB server (mysql/mariadb/none)" "$DB_SERVER"
+    prompt_yes_no CONFIGURE_DEV_DB_USER "Configure default DB dev user/password" "$CONFIGURE_DEV_DB_USER"
+    if is_yes "$CONFIGURE_DEV_DB_USER"; then
+      prompt_with_default DB_DEV_USER "DB dev user" "$DB_DEV_USER"
+      prompt_with_default DB_DEV_PASSWORD "DB dev password" "$DB_DEV_PASSWORD"
+    fi
     prompt_yes_no INSTALL_POSTGRESQL "Install PostgreSQL" "$INSTALL_POSTGRESQL"
     prompt_yes_no INSTALL_REDIS "Install Redis" "$INSTALL_REDIS"
     prompt_yes_no INSTALL_PHPMYADMIN "Install phpMyAdmin" "$INSTALL_PHPMYADMIN"

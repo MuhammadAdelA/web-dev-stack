@@ -144,6 +144,16 @@ set_timezone_if_needed() {
   run_cmd "Setting timezone to $BOOTSTRAP_TIMEZONE" timedatectl set-timezone "$BOOTSTRAP_TIMEZONE"
 }
 
+ensure_web_root_owned_by_dev_user() {
+  if ! id "$DEV_USER" >/dev/null 2>&1; then
+    log_warn "DEV_USER '$DEV_USER' does not exist; skipping /var/www ownership update"
+    return 0
+  fi
+
+  run_cmd "Ensuring $DEV_USER is in www-data group" usermod -a -G www-data "$DEV_USER"
+  run_bash "Setting /var/www ownership to $DEV_USER:www-data" "install -d -m 0755 /var/www && chown -R '$DEV_USER':www-data /var/www"
+}
+
 write_file_if_changed() {
   local target="$1" content="$2" mode="${3:-0644}"
   if [[ -f "$target" ]] && [[ "$(cat "$target")" == "$content" ]]; then

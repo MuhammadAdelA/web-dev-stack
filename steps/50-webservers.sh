@@ -52,6 +52,7 @@ step_main() {
       install_packages "Installing Apache" apache2
       run_cmd "Enabling Apache rewrite" a2enmod rewrite
       run_cmd "Enabling Apache headers" a2enmod headers
+      ensure_web_root_owned_by_dev_user
       if is_yes "$INSTALL_PHP"; then
         configure_apache_php_handler
       fi
@@ -60,6 +61,7 @@ step_main() {
       ;;
     nginx)
       install_packages "Installing Nginx" nginx
+      ensure_web_root_owned_by_dev_user
       run_cmd "Enabling Nginx" systemctl enable nginx
       run_cmd "Starting Nginx" systemctl restart nginx
       ;;

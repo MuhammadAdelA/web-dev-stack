@@ -79,6 +79,7 @@ done
 
 install_virtualservers_helper() {
   local tool_path="/usr/local/bin/virtualservers"
+  local config_path="/etc/default/virtualservers"
   local tool_content
 
   tool_content="$(cat <<'SCRIPT'
@@ -99,6 +100,7 @@ Examples:
 Notes:
   - This tool only scaffolds site config files and docroots.
   - It does not automatically enable sites or reload services.
+  - Docroots are owned by VIRTUALSERVERS_OWNER (from /etc/default/virtualservers).
 USAGE
 }
 
@@ -109,6 +111,22 @@ die() {
 
 require_root() {
   [[ ${EUID:-$(id -u)} -eq 0 ]] || die "run as root (sudo)"
+}
+
+resolve_owner() {
+  local owner="${VIRTUALSERVERS_OWNER:-}"
+
+  if [[ -z "$owner" && -f /etc/default/virtualservers ]]; then
+    # shellcheck disable=SC1091
+    source /etc/default/virtualservers
+    owner="${VIRTUALSERVERS_OWNER:-}"
+  fi
+  if [[ -z "$owner" ]]; then
+    owner="${SUDO_USER:-${USER:-www-data}}"
+  fi
+  id "$owner" >/dev/null 2>&1 || die "owner user '$owner' not found (set VIRTUALSERVERS_OWNER in /etc/default/virtualservers)"
+
+  printf '%s' "$owner"
 }
 
 validate_server_name() {
@@ -174,9 +192,15 @@ EOF
 
 create_virtual_server() {
   local name="${1:-}" docroot="${2:-}" mode="${3:-both}"
+  local owner group
   [[ -n "$name" && -n "$docroot" ]] || die "create requires <server_name> <docroot> [apache|nginx|both]"
   validate_server_name "$name"
   validate_docroot "$docroot"
+  owner="$(resolve_owner)"
+  group="www-data"
+  if ! getent group "$group" >/dev/null 2>&1; then
+    group="$(id -gn "$owner" 2>/dev/null || printf '%s' "$owner")"
+  fi
 
   case "$mode" in
     apache|nginx|both) ;;
@@ -188,6 +212,8 @@ create_virtual_server() {
     printf '<!doctype html><title>%s</title><h1>%s</h1>\n' "$name" "$name" > "$docroot/index.html"
     printf 'Created docroot index: %s/index.html\n' "$docroot"
   fi
+  chown -R "$owner:$group" "$docroot"
+  printf 'Set docroot owner: %s (%s:%s)\n' "$docroot" "$owner" "$group"
 
   if [[ "$mode" == "apache" || "$mode" == "both" ]]; then
     write_apache_vhost "$name" "$docroot"
@@ -238,6 +264,7 @@ SCRIPT
 )"
 
   write_file_if_changed "$tool_path" "$tool_content" 0755
+  write_file_if_changed "$config_path" "VIRTUALSERVERS_OWNER=${DEV_USER}" 0644
   log_info "virtualservers helper available at $tool_path"
 }
 
@@ -267,6 +294,7 @@ step_main() {
   fi
 
   if is_yes "$INSTALL_VIRTUALSERVERS"; then
+    ensure_web_root_owned_by_dev_user
     install_virtualservers_helper
   else
     log_info "Skipping virtualservers helper installation"
