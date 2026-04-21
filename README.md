@@ -108,6 +108,7 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 
 - This kit targets Ubuntu 24.04 or newer.
 - It keeps the golden image generic; project-specific setup should happen after boot.
+- `DEV_USER` defaults dynamically to `SUDO_USER`, then `USER`, then `root`; `COMPOSER_DEV_USER` defaults to `DEV_USER`.
 - Composer verification prefers running as a non-root dev user. If that user does not exist, verification falls back to `COMPOSER_ALLOW_SUPERUSER=1`.
 - phpMyAdmin is optional and requires PHP plus Apache or Nginx, and a MySQL-compatible server.
 - For Nginx, the script writes a reusable snippet to `/etc/nginx/snippets/phpmyadmin.conf`.
