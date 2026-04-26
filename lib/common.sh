@@ -76,9 +76,11 @@ json_escape() {
 }
 
 acquire_lock() {
-  exec 9>"$LOCK_FILE"
+  local lock_file="${LOCK_FILE:-}"
+  [[ -n "$lock_file" ]] || die "LOCK_FILE is not set; initialize bootstrap paths before acquiring the lock"
+  exec 9>"$lock_file"
   if ! flock -n 9; then
-    die "Another bootstrap process is already running. Lock: $LOCK_FILE"
+    die "Another bootstrap process is already running. Lock: $lock_file"
   fi
 }
 

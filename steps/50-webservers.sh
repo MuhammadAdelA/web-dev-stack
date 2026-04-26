@@ -12,7 +12,7 @@ configure_apache_phpmyadmin_alias() {
 configure_nginx_phpmyadmin_alias() {
   local conf_target="/etc/nginx/snippets/phpmyadmin.conf"
   local content
-  content="location ${PHPMYADMIN_ALIAS} {\n    alias /usr/share/phpmyadmin;\n    index index.php;\n}\nlocation ~ ^${PHPMYADMIN_ALIAS}/(.+\\.php)$ {\n    alias /usr/share/phpmyadmin/$1;\n    include snippets/fastcgi-php.conf;\n    fastcgi_param SCRIPT_FILENAME /usr/share/phpmyadmin/$1;\n    fastcgi_pass unix:/run/php/php${PHP_DEFAULT_VERSION}-fpm.sock;\n}\n"
+  content="location ${PHPMYADMIN_ALIAS} {\n    alias /usr/share/phpmyadmin;\n    index index.php;\n}\nlocation ~ ^${PHPMYADMIN_ALIAS}/(.+\\.php)$ {\n    alias /usr/share/phpmyadmin/\$1;\n    include snippets/fastcgi-php.conf;\n    fastcgi_param SCRIPT_FILENAME /usr/share/phpmyadmin/\$1;\n    fastcgi_pass unix:/run/php/php${PHP_DEFAULT_VERSION}-fpm.sock;\n}\n"
   write_file_if_changed "$conf_target" "$(printf '%b' "$content")"
   log_warn "Nginx phpMyAdmin snippet written to $conf_target; include it in your server block manually if needed"
 }

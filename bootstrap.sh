@@ -6,9 +6,13 @@ export BOOTSTRAP_ROOT="$SCRIPT_DIR"
 export LIB_DIR="$SCRIPT_DIR/lib"
 export STEPS_DIR="$SCRIPT_DIR/steps"
 
+# shellcheck source=lib/common.sh
 source "$LIB_DIR/common.sh"
+# shellcheck source=lib/input.sh
 source "$LIB_DIR/input.sh"
+# shellcheck source=lib/apt.sh
 source "$LIB_DIR/apt.sh"
+# shellcheck source=lib/verify.sh
 source "$LIB_DIR/verify.sh"
 
 CONFIG_FILE=""
