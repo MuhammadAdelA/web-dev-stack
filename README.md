@@ -1,218 +1,673 @@
-# Web Dev Bootstrap Kit
+# Web Dev Stack Bootstrap
 
-A standalone post-golden-image bootstrap kit for Ubuntu 24.04+ that prepares a general web development environment.
+`web-dev-stack` is a standalone bootstrap kit for preparing an Ubuntu web-development machine after the base OS is installed.
 
-## Features
+It is useful when you want a repeatable way to turn a fresh Ubuntu VM, cloud instance, WSL-like environment, or local development server into a ready-to-use web development box with PHP, Node.js, databases, web servers, Redis, phpMyAdmin, and local virtual-host helpers.
 
-- Step-based bootstrap runner
-- Dry-run mode
-- Interactive or non-interactive configuration
-- Structured logging and machine-readable summary
-- Conflict-aware validation
-- Optional auto-applied dev server pre-configs (Apache/PHP/MySQL-family/phpMyAdmin/Node corepack)
-- Optional components:
-  - Apache or Nginx
-  - Multiple PHP versions
-  - Composer
-  - Node.js + pnpm/yarn
-  - MySQL or MariaDB
-  - PostgreSQL
-  - Redis
-  - phpMyAdmin
-  - virtualservers helper tool (Apache/Nginx vhost scaffolding)
+This repository is **not an application framework** and it does not create a project for you. It prepares the machine that your projects will run on.
 
-## Quick start
+---
 
-```bash
-sudo cp bootstrap.env.example bootstrap.env
-sudo BOOTSTRAP_ENV=$PWD/bootstrap.env ./bootstrap.sh
+## What this project solves
+
+A new development machine usually needs the same setup work every time:
+
+- enable the right package repositories;
+- install base tools;
+- install PHP and common extensions;
+- install Composer;
+- install Node.js and package managers;
+- install and start web servers;
+- install databases and Redis;
+- create local development database users;
+- apply safe development defaults;
+- verify that everything actually works.
+
+`web-dev-stack` automates that setup using small ordered steps that can be run fully, partially, or only in dry-run mode.
+
+---
+
+## Supported target
+
+- Ubuntu **24.04 or newer**
+- Root or `sudo` access
+- `apt-get` based systems
+- `systemd` based service management for full service checks
+
+Dry-run mode can run in more limited environments, but real installation is intended for Ubuntu.
+
+---
+
+## Main features
+
+| Area | What it provides |
+| --- | --- |
+| Runner | Step-based bootstrap script with `--only`, `--from`, and `--until` |
+| Safety | Dry-run mode, non-interactive mode, validation, lock file, logs |
+| Web servers | Apache, Nginx, or no web server |
+| PHP | One or more PHP versions, default CLI PHP, common extensions, PHP-FPM |
+| Composer | Global Composer installation and non-root verification |
+| Node.js | NodeSource-based Node.js, optional pnpm and Yarn |
+| Databases | MySQL or MariaDB, optional PostgreSQL, optional Redis |
+| Dev DB user | Optional development DB user/password setup |
+| Tools | Optional phpMyAdmin and `virtualservers` helper |
+| Presets | Optional development presets for Apache, PHP, MySQL/MariaDB, phpMyAdmin, Node corepack |
+| Verification | Post-install verification for installed commands and services |
+| CI | GitHub Actions workflow for ShellCheck, syntax checks, and bootstrap dry-runs |
+
+---
+
+## Repository layout
+
+```text
+.
+├── bootstrap.sh                  # Main runner
+├── install.sh                    # Online installer wrapper
+├── bootstrap.env.example         # Example environment configuration
+├── configs/                      # Ready-made dry-run config profiles
+├── lib/                          # Shared shell helpers
+├── steps/                        # Ordered bootstrap steps
+├── scripts/                      # Convenience run scripts
+└── .github/workflows/            # CI checks
 ```
 
-Dry-run example:
+The bootstrap flow is intentionally split into files so you can run only the part you need.
 
-```bash
-sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --dry-run
+---
+
+## Available steps
+
+```text
+00-preflight.sh
+10-input.sh
+20-repositories.sh
+30-packages-base.sh
+40-runtimes.sh
+50-webservers.sh
+60-databases.sh
+70-tools.sh
+75-dev-preconfig.sh
+80-verify.sh
+90-summary.sh
 ```
 
-## Installation examples
-
-Local checkout:
+List them from the CLI:
 
 ```bash
-# Interactive (prompts enabled)
-sudo ./bootstrap.sh
-
-# Scenario 1: Nginx + PHP + Composer + Node + pnpm + PostgreSQL + Redis
-sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --non-interactive
-
-# Scenario 2: Apache + PHP + Composer + MariaDB + phpMyAdmin
-sudo ./bootstrap.sh --config configs/apache-php-mariadb-phpmyadmin-node.env --non-interactive
-
-# Scenario 3: Minimal Node-only environment
-sudo BOOTSTRAP_NON_INTERACTIVE=yes WEBSERVER=none INSTALL_PHP=no INSTALL_COMPOSER=no INSTALL_NODE=yes NODE_MAJOR=22 INSTALL_PNPM=yes INSTALL_YARN=no DB_SERVER=none INSTALL_POSTGRESQL=no INSTALL_REDIS=no INSTALL_PHPMYADMIN=no INSTALL_VIRTUALSERVERS=no ./bootstrap.sh
-
-# Re-run only verification on an already prepared machine
-sudo ./bootstrap.sh --only 80-verify.sh --non-interactive
-
-# Quick apply + verify dev server wiring on an already installed VM
-sudo ./scripts/run-apache-php-mariadb-dev.sh
+./bootstrap.sh --list
 ```
 
-## Online installer
+---
 
-Run directly from GitHub (default branch):
+## Quick start: local checkout
+
+Clone the repository, review the config, then run a dry-run first.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --dry-run
+git clone https://github.com/MuhammadAdelA/web-dev-stack.git
+cd web-dev-stack
+cp bootstrap.env.example bootstrap.env
+sudo BOOTSTRAP_ENV=$PWD/bootstrap.env ./bootstrap.sh --dry-run --non-interactive
 ```
 
-When run via a non-interactive stdin stream (for example `curl | bash`), the bootstrap auto-enables non-interactive mode and uses env/config/default values.
-
-Run a real install:
+Run for real after reviewing the plan:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive
+sudo BOOTSTRAP_ENV=$PWD/bootstrap.env ./bootstrap.sh --no-dry-run --non-interactive
 ```
 
-Run with flags only (no config file):
+---
+
+## Quick start: online installer
+
+Run directly from GitHub in dry-run mode:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- \
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | \
+  bash -s -- --dry-run --non-interactive
+```
+
+Run a real install with explicit options:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | \
+  bash -s -- \
+    --no-dry-run \
+    --non-interactive \
+    --webserver nginx \
+    --install-php yes \
+    --php-versions "8.2 8.3" \
+    --php-default 8.3 \
+    --install-composer yes \
+    --install-node yes \
+    --node-major 22 \
+    --install-pnpm yes \
+    --install-yarn no \
+    --db-server mariadb \
+    --configure-dev-db-user yes \
+    --db-dev-password "ChangeMe-Use-A-Real-Password" \
+    --install-postgresql yes \
+    --install-redis yes
+```
+
+When using `curl | bash`, stdin is not interactive. The bootstrap detects that and runs with current environment, config, or default values.
+
+---
+
+## Built-in configuration profiles
+
+The `configs/` directory contains ready-made profiles.
+
+| File | Intended use | Notes |
+| --- | --- | --- |
+| `configs/nginx-php-postgres-node.env` | Nginx, PHP, Composer, Node, pnpm, PostgreSQL, Redis, virtualservers | Good for Laravel/API work without MySQL-family DB |
+| `configs/apache-php-mariadb-phpmyadmin-node.env` | Apache, PHP, Composer, MariaDB, phpMyAdmin, Node, dev presets | Good for classic PHP/phpMyAdmin workflows |
+
+The bundled config profiles intentionally set:
+
+```bash
+BOOTSTRAP_DRY_RUN=yes
+```
+
+Use `--no-dry-run` when you are ready to apply them for real.
+
+Example:
+
+```bash
+sudo ./bootstrap.sh \
+  --config configs/apache-php-mariadb-phpmyadmin-node.env \
+  --no-dry-run \
   --non-interactive \
-  --webserver nginx \
-  --install-php yes \
-  --php-versions "8.2 8.3" \
-  --php-default 8.3 \
-  --install-composer yes \
+  --db-dev-password "Use-A-Strong-Local-Password"
+```
+
+---
+
+## Real-world scenarios
+
+### 1. Fresh Ubuntu VM for Laravel development
+
+Use this when you want PHP, Composer, Nginx, PostgreSQL, Redis, Node.js, and pnpm.
+
+```bash
+sudo ./bootstrap.sh \
+  --config configs/nginx-php-postgres-node.env \
+  --no-dry-run \
+  --non-interactive \
+  --db-dev-password "LocalDevOnly-StrongPass"
+```
+
+After it finishes, verify the important tools:
+
+```bash
+php -v
+composer --version
+node -v
+pnpm -v
+psql --version
+redis-server --version
+```
+
+A typical next step would be cloning a Laravel project into `/var/www` and configuring an Nginx server block or using your own project-specific deployment script.
+
+---
+
+### 2. Classic PHP box with Apache, MariaDB, and phpMyAdmin
+
+Use this when you want an environment similar to a traditional LAMP setup, but managed through explicit steps.
+
+```bash
+sudo ./bootstrap.sh \
+  --config configs/apache-php-mariadb-phpmyadmin-node.env \
+  --no-dry-run \
+  --non-interactive \
+  --db-dev-user "$USER" \
+  --db-dev-password "LocalMariaDB-StrongPass"
+```
+
+This profile can install phpMyAdmin and apply bundled development presets.
+
+Useful verification commands:
+
+```bash
+apache2 -v
+php -v
+mariadb --version
+systemctl status apache2 --no-pager
+systemctl status mariadb --no-pager
+```
+
+Open phpMyAdmin locally:
+
+```text
+http://127.0.0.1/phpmyadmin
+```
+
+---
+
+### 3. Minimal machine with no web server and no databases
+
+Use this when you only want to verify the runner or prepare a machine without installing services.
+
+```bash
+sudo ./bootstrap.sh \
+  --dry-run \
+  --non-interactive \
+  --webserver none \
+  --install-php no \
+  --install-composer no \
+  --install-node no \
+  --install-pnpm no \
+  --install-yarn no \
+  --db-server none \
+  --configure-dev-db-user no \
+  --install-postgresql no \
+  --install-redis no \
+  --install-phpmyadmin no \
+  --install-virtualservers no
+```
+
+This is also the style used by the CI dry-run check to ensure the runner can validate a minimal no-service setup.
+
+---
+
+### 4. Install only Node.js and pnpm
+
+```bash
+sudo ./bootstrap.sh \
+  --no-dry-run \
+  --non-interactive \
+  --webserver none \
+  --install-php no \
+  --install-composer no \
   --install-node yes \
   --node-major 22 \
   --install-pnpm yes \
   --install-yarn no \
   --db-server none \
-  --install-postgresql yes \
-  --install-redis yes \
+  --configure-dev-db-user no \
+  --install-postgresql no \
+  --install-redis no \
   --install-phpmyadmin no \
+  --install-virtualservers no
+```
+
+---
+
+### 5. Install only the virtual host helper
+
+The optional `virtualservers` helper creates Apache/Nginx site files and document roots. It does not enable sites automatically.
+
+Install only the helper:
+
+```bash
+sudo ./bootstrap.sh \
+  --only 70-tools.sh \
+  --no-dry-run \
+  --non-interactive \
   --install-virtualservers yes
 ```
 
-Force real execution when a config enables dry-run:
+Create a local Nginx site scaffold:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --config configs/nginx-php-postgres-node.env --no-dry-run --non-interactive
-```
-
-Common option flags:
-
-- `--no-dry-run` or `--dry-run`
-- `--non-interactive` or `--interactive`
-- `--webserver apache|nginx|none`
-- `--install-php yes|no`, `--php-versions "..."`
-- `--install-composer yes|no`, `--composer-dev-user <user>`
-- `--install-node yes|no`, `--node-major <version>`, `--install-pnpm yes|no`, `--install-yarn yes|no`
-- `--db-server mysql|mariadb|none`, `--install-postgresql yes|no`, `--install-redis yes|no`
-- `--configure-dev-db-user yes|no`, `--db-dev-user <user>`, `--db-dev-password <password>`
-- `--install-phpmyadmin yes|no`, `--phpmyadmin-alias /phpmyadmin`
-- `--install-virtualservers yes|no`
-- `--apply-dev-presets yes|no`
-
-Use the virtualservers helper after installation:
-
-```bash
-# Create config files for a local dev site (without auto-enabling them)
 sudo virtualservers create app.local /var/www/app.local nginx
 ```
 
-Use a bundled config profile with the online installer:
+Then enable the Nginx site manually:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive --config configs/nginx-php-postgres-node.env
+sudo ln -s /etc/nginx/sites-available/app.local.conf /etc/nginx/sites-enabled/app.local.conf
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
-Run selected steps only:
+---
+
+### 6. Re-run verification only
+
+Use this after manually changing services or after a partial run.
 
 ```bash
-# Step range
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --dry-run --from 20-repositories.sh --until 40-runtimes.sh
-
-# Verify step only
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | bash -s -- --non-interactive --only 80-verify.sh
+sudo ./bootstrap.sh --only 80-verify.sh --non-interactive
 ```
 
-More practical use cases:
+If the default settings do not match what is actually installed, pass explicit flags so verification knows what to expect.
+
+Example: verify a no-webserver PostgreSQL-only machine:
 
 ```bash
-# Install only the virtualservers helper (no full-stack verify)
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --only 70-tools.sh --install-virtualservers yes --non-interactive --no-dry-run
-
-# Run tools + verify on a minimal machine without expecting web/db/php/node services
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --from 70-tools.sh --install-virtualservers yes --webserver none --install-php no --install-composer no --install-node no --db-server none --install-postgresql no --install-redis no --install-phpmyadmin no --non-interactive --no-dry-run
-
-# Apply Apache + PHP binding only
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --only 50-webservers.sh --webserver apache --install-php yes --php-default 8.3 --non-interactive --no-dry-run
-
-# Re-apply Apache + PHP + phpMyAdmin wiring and verify it
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --from 50-webservers.sh --until 80-verify.sh --webserver apache --install-php yes --php-default 8.3 --install-phpmyadmin yes --db-server mariadb --non-interactive --no-dry-run
-
-# Create DB dev users with custom password
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --non-interactive --db-server mariadb --install-postgresql yes --configure-dev-db-user yes --db-dev-password "StrongPass!234" --no-dry-run
+sudo ./bootstrap.sh \
+  --only 80-verify.sh \
+  --non-interactive \
+  --webserver none \
+  --install-php no \
+  --install-composer no \
+  --install-node no \
+  --install-pnpm no \
+  --install-yarn no \
+  --db-server none \
+  --install-postgresql yes \
+  --install-redis no \
+  --install-phpmyadmin no \
+  --install-virtualservers no
 ```
 
-Pin a specific branch or tag for the downloaded kit:
+---
+
+### 7. Re-apply Apache, PHP, and phpMyAdmin wiring
+
+Useful when packages are already installed but Apache/PHP/phpMyAdmin binding needs to be refreshed.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | REF=<branch-or-tag> bash -s -- --dry-run
+sudo ./bootstrap.sh \
+  --from 50-webservers.sh \
+  --until 80-verify.sh \
+  --no-dry-run \
+  --non-interactive \
+  --webserver apache \
+  --install-php yes \
+  --php-versions "8.3" \
+  --php-default 8.3 \
+  --install-phpmyadmin yes \
+  --db-server mariadb
 ```
 
-## Available steps
+---
 
-- `00-preflight.sh`
-- `10-input.sh`
-- `20-repositories.sh`
-- `30-packages-base.sh`
-- `40-runtimes.sh`
-- `50-webservers.sh`
-- `60-databases.sh`
-- `70-tools.sh`
-- `75-dev-preconfig.sh`
-- `80-verify.sh`
-- `90-summary.sh`
+## Common CLI options
 
-## Notes
+| Option | Values | Description |
+| --- | --- | --- |
+| `--dry-run` / `--no-dry-run` | yes/no behavior | Preview actions or execute them |
+| `--non-interactive` / `--interactive` | mode | Disable or enable prompts |
+| `--config <file>` | path | Load a shell-style config file |
+| `--webserver` | `apache`, `nginx`, `none` | Choose web server |
+| `--install-php` | `yes`, `no` | Install PHP runtimes |
+| `--php-versions` | quoted list | Example: `"8.2 8.3"` |
+| `--php-default` | version | Default CLI/Apache PHP version |
+| `--install-composer` | `yes`, `no` | Install Composer globally |
+| `--install-node` | `yes`, `no` | Install Node.js |
+| `--node-major` | major version | Example: `22` |
+| `--install-pnpm` | `yes`, `no` | Install pnpm globally |
+| `--install-yarn` | `yes`, `no` | Install Yarn globally |
+| `--db-server` | `mysql`, `mariadb`, `none` | Primary MySQL-family DB |
+| `--install-postgresql` | `yes`, `no` | Install PostgreSQL |
+| `--install-redis` | `yes`, `no` | Install Redis |
+| `--configure-dev-db-user` | `yes`, `no` | Create/update dev DB user |
+| `--db-dev-user` | username | DB development username |
+| `--db-dev-password` | password | DB development password |
+| `--install-phpmyadmin` | `yes`, `no` | Install phpMyAdmin |
+| `--phpmyadmin-alias` | path | Default: `/phpmyadmin` |
+| `--install-virtualservers` | `yes`, `no` | Install helper tool |
+| `--apply-dev-presets` | `yes`, `no` | Apply bundled dev configs |
+| `--only <step>` | step filename | Run exactly one step |
+| `--from <step>` | step filename | Start from a step |
+| `--until <step>` | step filename | Stop after a step |
+| `--list` | none | List available steps |
 
-- This kit targets Ubuntu 24.04 or newer.
-- It keeps the golden image generic; project-specific setup should happen after boot.
-- `DEV_USER` defaults dynamically to `SUDO_USER`, then `USER`, then `root`; `COMPOSER_DEV_USER` defaults to `DEV_USER`.
-- Composer verification prefers running as a non-root dev user. If that user does not exist, verification falls back to `COMPOSER_ALLOW_SUPERUSER=1`.
-- phpMyAdmin is optional and requires PHP plus Apache or Nginx, and a MySQL-compatible server.
-- virtualservers is optional and installs `/usr/local/bin/virtualservers` for scaffolding Apache/Nginx site files.
-- `APPLY_DEV_PRESETS=yes` auto-applies bundled dev presets:
-  Apache `web-dev-bootstrap-dev.conf`, PHP `web-dev-bootstrap-dev.ini`, MySQL/MariaDB utf8mb4 config, phpMyAdmin temp-dir config, and `corepack enable`.
-- `/var/www` ownership is normalized to `DEV_USER:www-data` when web servers or virtualservers setup runs.
-- For Apache + PHP, the bootstrap explicitly enables `php${PHP_DEFAULT_VERSION}` and verifies it with `a2query`.
-- For Nginx, the script writes a reusable snippet to `/etc/nginx/snippets/phpmyadmin.conf`.
-- By default, DB dev credentials are configured when relational DBs are installed:
-  `DB_DEV_USER=$DEV_USER`, `DB_DEV_PASSWORD=Password123` (override in env/flags).
+---
+
+## Configuration files
+
+You can configure the bootstrap through any combination of:
+
+1. CLI flags;
+2. `--config <file>`;
+3. `BOOTSTRAP_ENV=/path/to/file`;
+4. environment variables;
+5. built-in defaults.
+
+Example config:
+
+```bash
+BOOTSTRAP_DRY_RUN=no
+BOOTSTRAP_NON_INTERACTIVE=yes
+WEBSERVER=nginx
+INSTALL_PHP=yes
+PHP_VERSIONS="8.2 8.3"
+PHP_DEFAULT_VERSION=8.3
+INSTALL_COMPOSER=yes
+INSTALL_NODE=yes
+NODE_MAJOR=22
+INSTALL_PNPM=yes
+INSTALL_YARN=no
+DB_SERVER=mariadb
+CONFIGURE_DEV_DB_USER=yes
+DB_DEV_USER=developer
+DB_DEV_PASSWORD=ChangeThisPassword
+INSTALL_POSTGRESQL=yes
+INSTALL_REDIS=yes
+INSTALL_PHPMYADMIN=no
+INSTALL_VIRTUALSERVERS=yes
+APPLY_DEV_PRESETS=no
+```
+
+Run with it:
+
+```bash
+sudo ./bootstrap.sh --config ./my-bootstrap.env --non-interactive
+```
+
+Important: config files are sourced by Bash. Only use config files you trust.
+
+---
+
+## Development presets
+
+Set this when you want the bootstrap to apply development-oriented defaults:
+
+```bash
+--apply-dev-presets yes
+```
+
+The bundled presets may include:
+
+- Apache development directory configuration;
+- PHP development ini values such as `display_errors`, larger upload limits, and timezone;
+- MySQL/MariaDB `utf8mb4` defaults;
+- phpMyAdmin temp directory configuration;
+- Node corepack shims.
+
+These presets are intended for local development machines, not hardened production servers.
+
+---
+
+## Logs, summaries, and verification
+
+The bootstrap writes logs and summaries for every run.
+
+Real mode defaults:
+
+```text
+/var/log/web-dev-bootstrap/
+/var/lib/web-dev-bootstrap/
+```
+
+Dry-run mode defaults:
+
+```text
+/tmp/web-dev-bootstrap/logs/
+/tmp/web-dev-bootstrap/state/
+```
+
+Files created per run:
+
+```text
+bootstrap-<RUN_ID>.log
+summary-<RUN_ID>.tsv
+summary-<RUN_ID>.jsonl
+bootstrap-<RUN_ID>.state
+```
+
+Sensitive DB password details are redacted from log and summary output.
+
+---
+
+## Online installer details
+
+The online installer downloads the repository archive and then runs `bootstrap.sh`.
+
+Default:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | \
+  bash -s -- --dry-run
+```
+
+Use another branch:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | \
+  REF=my-branch bash -s -- --dry-run
+```
+
+Current note: `install.sh` downloads from `refs/heads/$REF`, so `REF` is currently a branch name.
+
+---
+
+## CI checks
+
+The repository includes a GitHub Actions workflow that runs on pull requests, pushes to `main`, and manual dispatch.
+
+It checks:
+
+- Bash syntax for shell scripts;
+- Bash syntax for env-style config files;
+- ShellCheck with sourced-file analysis;
+- dry-run bootstrap scenarios for common profiles;
+- dry-run bootstrap scenario for a minimal no-service profile.
+
+---
+
+## Security and safety notes
+
+- Run a dry-run before real installation.
+- Do not use the default `Password123` outside disposable local development.
+- Prefer passing a strong local password through `--db-dev-password` or a private config file.
+- Config files are Bash-sourced; do not run untrusted config files.
+- The script changes packages, services, users/groups, `/var/www`, and system config files in real mode.
+- This project is designed for development environments, not production hardening.
+- phpMyAdmin should be used carefully and only when you need it.
+- For public or shared servers, review every selected component before running `--no-dry-run`.
+
+---
 
 ## Troubleshooting
 
-- `Verification failed for nginx-version` after using `--from 70-tools.sh`:
-Cause: `--from 70-tools.sh` still runs `80-verify.sh`, and defaults may expect Nginx when no config/flags are provided.
-Fix: use `--only 70-tools.sh` for tool-only install, or pass explicit flags to disable unrelated checks (`--webserver none --install-php no --install-node no --db-server none ...`).
+### `INSTALL_PNPM=yes requires INSTALL_NODE=yes`
 
-- phpMyAdmin installed but PHP is not executing through Apache:
-Cause: Apache PHP module/MPM/binding may not match the selected PHP default in partial runs.
-Fix: re-run from webserver through verify:
-`curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/install.sh | sudo bash -s -- --from 50-webservers.sh --until 80-verify.sh --webserver apache --install-php yes --php-default 8.3 --install-phpmyadmin yes --db-server mariadb --non-interactive --no-dry-run`
+You disabled Node.js but left pnpm enabled.
 
-- `Permission denied` under `/var/log/web-dev-bootstrap` or `/var/lib/web-dev-bootstrap`:
-Cause: real mode (`--no-dry-run`) writes system paths and requires root.
-Fix: run with `sudo`.
+Fix:
 
-- `Another bootstrap process is already running`:
-Cause: two bootstrap commands ran concurrently.
-Fix: run one bootstrap command at a time and retry.
+```bash
+--install-node no --install-pnpm no --install-yarn no
+```
 
-- MySQL/MariaDB/PostgreSQL dev login failed in verify:
-Cause: the configured password differs from defaults or DB role/user was changed manually.
-Fix: rerun step 60 with explicit DB credentials, for example:
-`sudo ./bootstrap.sh --only 60-databases.sh --non-interactive --no-dry-run --configure-dev-db-user yes --db-dev-user "$USER" --db-dev-password "Password123"`
+---
+
+### `Verification failed for nginx-version`
+
+The verification step expected Nginx, but Nginx is not installed or was disabled in your intended setup.
+
+Fix by passing the real machine profile:
+
+```bash
+sudo ./bootstrap.sh \
+  --only 80-verify.sh \
+  --non-interactive \
+  --webserver none
+```
+
+Also disable unrelated components if they are not installed.
+
+---
+
+### phpMyAdmin is installed but not reachable through Nginx
+
+For Nginx, the bootstrap writes a reusable snippet:
+
+```text
+/etc/nginx/snippets/phpmyadmin.conf
+```
+
+Include it in your server block and reload Nginx:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+---
+
+### Permission denied under `/var/log/web-dev-bootstrap`
+
+Real mode writes to system paths.
+
+Fix:
+
+```bash
+sudo ./bootstrap.sh --no-dry-run
+```
+
+---
+
+### `Another bootstrap process is already running`
+
+A lock file is active because another bootstrap process is running.
+
+Fix: wait for the other run to finish. If you are sure no process is running, inspect:
+
+```text
+/var/lib/web-dev-bootstrap/bootstrap.lock
+```
+
+---
+
+### MySQL, MariaDB, or PostgreSQL dev login fails
+
+The configured username/password may not match the DB state.
+
+Re-run database setup with explicit credentials:
+
+```bash
+sudo ./bootstrap.sh \
+  --only 60-databases.sh \
+  --no-dry-run \
+  --non-interactive \
+  --configure-dev-db-user yes \
+  --db-dev-user "$USER" \
+  --db-dev-password "NewLocalDevPassword"
+```
+
+---
+
+## Recommended workflow
+
+For safest usage:
+
+1. Start with a fresh Ubuntu 24.04+ machine.
+2. Run a dry-run with the exact profile you want.
+3. Review the printed bootstrap plan.
+4. Override the default DB password.
+5. Run with `--no-dry-run`.
+6. Check the summary file.
+7. Run project-specific setup after the machine bootstrap finishes.
+
+Example:
+
+```bash
+sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --dry-run --non-interactive
+sudo ./bootstrap.sh \
+  --config configs/nginx-php-postgres-node.env \
+  --no-dry-run \
+  --non-interactive \
+  --db-dev-password "StrongLocalPassword"
+```
+
+---
+
+## License
+
+No license file is currently included. Add one before distributing or reusing this project outside your own account or organization.
