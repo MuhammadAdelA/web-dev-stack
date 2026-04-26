@@ -2,18 +2,20 @@
 set -Eeuo pipefail
 
 verify_command() {
-  local name="$1" cmd="$2"
+  local name="$1" cmd="$2" detail="${3:-}"
+  [[ -n "$detail" ]] || detail="$cmd"
+
   if [[ "$BOOTSTRAP_DRY_RUN" == "yes" ]]; then
-    log_info "DRY-RUN verify: $cmd"
-    record_summary "$name" "planned" "$cmd"
+    log_info "DRY-RUN verify: $detail"
+    record_summary "$name" "planned" "$detail"
     return 0
   fi
   if bash -lc "$cmd" >> "$LOG_FILE" 2>&1; then
     log_success "Verified $name"
-    record_summary "$name" "ok" "$cmd"
+    record_summary "$name" "ok" "$detail"
   else
     log_error "Verification failed for $name"
-    record_summary "$name" "failed" "$cmd"
+    record_summary "$name" "failed" "$detail"
     return 1
   fi
 }
