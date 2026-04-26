@@ -48,15 +48,24 @@ verify_db_dev_credentials() {
 
   case "$DB_SERVER" in
     mysql)
-      verify_command "mysql-dev-login" "mysql -u\"$DB_DEV_USER\" -p\"$DB_DEV_PASSWORD\" -e \"SELECT 1;\""
+      verify_command \
+        "mysql-dev-login" \
+        "mysql -u\"$DB_DEV_USER\" -p\"$DB_DEV_PASSWORD\" -e \"SELECT 1;\"" \
+        "mysql -u\"$DB_DEV_USER\" -p\"<redacted>\" -e \"SELECT 1;\""
       ;;
     mariadb)
-      verify_command "mariadb-dev-login" "mariadb -u\"$DB_DEV_USER\" -p\"$DB_DEV_PASSWORD\" -e \"SELECT 1;\""
+      verify_command \
+        "mariadb-dev-login" \
+        "mariadb -u\"$DB_DEV_USER\" -p\"$DB_DEV_PASSWORD\" -e \"SELECT 1;\"" \
+        "mariadb -u\"$DB_DEV_USER\" -p\"<redacted>\" -e \"SELECT 1;\""
       ;;
   esac
 
   if is_yes "$INSTALL_POSTGRESQL"; then
-    verify_command "postgresql-dev-login" "PGPASSWORD=\"$DB_DEV_PASSWORD\" psql -h 127.0.0.1 -U \"$DB_DEV_USER\" -d \"$DB_DEV_USER\" -c 'SELECT 1;'"
+    verify_command \
+      "postgresql-dev-login" \
+      "PGPASSWORD=\"$DB_DEV_PASSWORD\" psql -h 127.0.0.1 -U \"$DB_DEV_USER\" -d \"$DB_DEV_USER\" -c 'SELECT 1;'" \
+      "PGPASSWORD=\"<redacted>\" psql -h 127.0.0.1 -U \"$DB_DEV_USER\" -d \"$DB_DEV_USER\" -c 'SELECT 1;'"
   fi
 }
 

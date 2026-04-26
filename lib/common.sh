@@ -1,10 +1,43 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+escape_glob_pattern() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\*/\\*}"
+  value="${value//\?/\\?}"
+  value="${value//\[/\\[}"
+  value="${value//\]/\\]}"
+  printf '%s' "$value"
+}
+
+redact_sensitive() {
+  local text="$*"
+  local redacted="$text"
+  local secret pattern
+
+  for secret in "${DB_DEV_PASSWORD:-}"; do
+    if [[ -n "$secret" ]]; then
+      pattern="$(escape_glob_pattern "$secret")"
+      redacted="${redacted//$pattern/<redacted>}"
+    fi
+  done
+
+  printf '%s' "$redacted" | sed -E \
+    -e 's/(DB_DEV_PASSWORD=)[^[:space:]]+/\1<redacted>/g' \
+    -e 's/(PGPASSWORD=")([^"]*)(")/\1<redacted>\3/g' \
+    -e "s/(PGPASSWORD=')([^']*)(')/\1<redacted>\3/g" \
+    -e 's/(PGPASSWORD=)[^[:space:]]+/\1<redacted>/g' \
+    -e 's/(-p")([^"]*)(")/\1<redacted>\3/g' \
+    -e "s/(-p')([^']*)(')/\1<redacted>\3/g" \
+    -e 's/(-p)[^[:space:]]+/\1<redacted>/g'
+}
+
 log_raw() {
   local level="$1"; shift
   local msg="$*"
   local ts
+  msg="$(redact_sensitive "$msg")"
   ts="$(date '+%Y-%m-%d %H:%M:%S')"
   if [[ -n "${LOG_FILE:-}" ]]; then
     printf '[%s] [%s] %s\n' "$ts" "$level" "$msg" | tee -a "$LOG_FILE" >&2
@@ -30,6 +63,9 @@ on_error() {
 
 record_summary() {
   local component="$1" status="$2" detail="$3"
+  component="$(redact_sensitive "$component")"
+  status="$(redact_sensitive "$status")"
+  detail="$(redact_sensitive "$detail")"
   printf '%s\t%s\t%s\n' "$component" "$status" "$detail" >> "$SUMMARY_FILE"
   printf '{"component":"%s","status":"%s","detail":"%s"}\n' \
     "$(json_escape "$component")" "$(json_escape "$status")" "$(json_escape "$detail")" >> "$MACHINE_SUMMARY_FILE"
