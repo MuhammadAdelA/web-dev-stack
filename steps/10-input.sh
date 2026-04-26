@@ -33,6 +33,7 @@ step_main() {
       prompt_with_default PHPMYADMIN_ALIAS "phpMyAdmin URL alias" "$PHPMYADMIN_ALIAS"
     fi
     prompt_yes_no INSTALL_VIRTUALSERVERS "Install virtualservers helper tool" "$INSTALL_VIRTUALSERVERS"
+    prompt_yes_no APPLY_DEV_PRESETS "Apply bundled dev server pre-configs" "$APPLY_DEV_PRESETS"
   else
     PHP_VERSIONS="$(normalize_csv_spaces "$PHP_VERSIONS")"
   fi

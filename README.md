@@ -9,6 +9,7 @@ A standalone post-golden-image bootstrap kit for Ubuntu 24.04+ that prepares a g
 - Interactive or non-interactive configuration
 - Structured logging and machine-readable summary
 - Conflict-aware validation
+- Optional auto-applied dev server pre-configs (Apache/PHP/MySQL-family/phpMyAdmin/Node corepack)
 - Optional components:
   - Apache or Nginx
   - Multiple PHP versions
@@ -45,13 +46,16 @@ sudo ./bootstrap.sh
 sudo ./bootstrap.sh --config configs/nginx-php-postgres-node.env --non-interactive
 
 # Scenario 2: Apache + PHP + Composer + MariaDB + phpMyAdmin
-sudo ./bootstrap.sh --config configs/apache-php-mariadb-phpmyadmin.env --non-interactive
+sudo ./bootstrap.sh --config configs/apache-php-mariadb-phpmyadmin-node.env --non-interactive
 
 # Scenario 3: Minimal Node-only environment
 sudo BOOTSTRAP_NON_INTERACTIVE=yes WEBSERVER=none INSTALL_PHP=no INSTALL_COMPOSER=no INSTALL_NODE=yes NODE_MAJOR=22 INSTALL_PNPM=yes INSTALL_YARN=no DB_SERVER=none INSTALL_POSTGRESQL=no INSTALL_REDIS=no INSTALL_PHPMYADMIN=no INSTALL_VIRTUALSERVERS=no ./bootstrap.sh
 
 # Re-run only verification on an already prepared machine
 sudo ./bootstrap.sh --only 80-verify.sh --non-interactive
+
+# Quick apply + verify dev server wiring on an already installed VM
+sudo ./scripts/run-apache-php-mariadb-dev.sh
 ```
 
 ## Online installer
@@ -109,6 +113,7 @@ Common option flags:
 - `--configure-dev-db-user yes|no`, `--db-dev-user <user>`, `--db-dev-password <password>`
 - `--install-phpmyadmin yes|no`, `--phpmyadmin-alias /phpmyadmin`
 - `--install-virtualservers yes|no`
+- `--apply-dev-presets yes|no`
 
 Use the virtualservers helper after installation:
 
@@ -168,6 +173,7 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 - `50-webservers.sh`
 - `60-databases.sh`
 - `70-tools.sh`
+- `75-dev-preconfig.sh`
 - `80-verify.sh`
 - `90-summary.sh`
 
@@ -179,6 +185,8 @@ curl -fsSL https://raw.githubusercontent.com/MuhammadAdelA/web-dev-stack/main/in
 - Composer verification prefers running as a non-root dev user. If that user does not exist, verification falls back to `COMPOSER_ALLOW_SUPERUSER=1`.
 - phpMyAdmin is optional and requires PHP plus Apache or Nginx, and a MySQL-compatible server.
 - virtualservers is optional and installs `/usr/local/bin/virtualservers` for scaffolding Apache/Nginx site files.
+- `APPLY_DEV_PRESETS=yes` auto-applies bundled dev presets:
+  Apache `web-dev-bootstrap-dev.conf`, PHP `web-dev-bootstrap-dev.ini`, MySQL/MariaDB utf8mb4 config, phpMyAdmin temp-dir config, and `corepack enable`.
 - `/var/www` ownership is normalized to `DEV_USER:www-data` when web servers or virtualservers setup runs.
 - For Apache + PHP, the bootstrap explicitly enables `php${PHP_DEFAULT_VERSION}` and verifies it with `a2query`.
 - For Nginx, the script writes a reusable snippet to `/etc/nginx/snippets/phpmyadmin.conf`.

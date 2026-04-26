@@ -68,6 +68,36 @@ verify_apache_php_binding() {
   verify_command "apache-php-module" "a2query -m php${PHP_DEFAULT_VERSION}"
 }
 
+verify_dev_presets() {
+  local version
+  if ! is_yes "$APPLY_DEV_PRESETS"; then
+    return 0
+  fi
+
+  if [[ "$WEBSERVER" == "apache" ]]; then
+    verify_command "apache-dev-preset" "a2query -c web-dev-bootstrap-dev"
+  fi
+
+  if is_yes "$INSTALL_PHP"; then
+    for version in $(normalize_csv_spaces "$PHP_VERSIONS"); do
+      verify_command "php${version}-dev-preset" "php${version} --ini | grep -q 'web-dev-bootstrap-dev.ini'"
+    done
+  fi
+
+  case "$DB_SERVER" in
+    mysql)
+      verify_command "mysql-dev-preset-file" "test -f /etc/mysql/mysql.conf.d/99-web-dev-bootstrap-dev.cnf"
+      ;;
+    mariadb)
+      verify_command "mariadb-dev-preset-file" "test -f /etc/mysql/mariadb.conf.d/99-web-dev-bootstrap-dev.cnf"
+      ;;
+  esac
+
+  if is_yes "$INSTALL_PHPMYADMIN"; then
+    verify_command "phpmyadmin-dev-preset-file" "test -f /etc/phpmyadmin/conf.d/99-web-dev-bootstrap-dev.php"
+  fi
+}
+
 step_main() {
   local key="80-verify"
   if skip_if_done "$key"; then return 0; fi
@@ -119,5 +149,6 @@ step_main() {
   verify_apache_php_binding
   verify_phpmyadmin_local
   verify_virtualservers_helper
+  verify_dev_presets
   mark_done "$key"
 }

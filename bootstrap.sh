@@ -48,6 +48,7 @@ CLI_ENABLE_UNIVERSE=""
 CLI_ENABLE_PPA_ONDREJ_PHP=""
 CLI_ENABLE_NODESOURCE=""
 CLI_PRIMARY_PHP_EXTENSIONS=""
+CLI_APPLY_DEV_PRESETS=""
 
 DEFAULT_STEP_ORDER=(
   "00-preflight.sh"
@@ -58,6 +59,7 @@ DEFAULT_STEP_ORDER=(
   "50-webservers.sh"
   "60-databases.sh"
   "70-tools.sh"
+  "75-dev-preconfig.sh"
   "80-verify.sh"
   "90-summary.sh"
 )
@@ -97,6 +99,7 @@ Options:
   --enable-ppa-ondrej-php <yn> Set ENABLE_PPA_ONDREJ_PHP (yes/no).
   --enable-nodesource <yn>   Set ENABLE_NODESOURCE (yes/no).
   --primary-php-extensions <list> Set PRIMARY_PHP_EXTENSIONS.
+  --apply-dev-presets <yn>   Set APPLY_DEV_PRESETS (yes/no).
   --only <step>         Run one step only.
   --from <step>         Start from a given step.
   --until <step>        Stop after a given step.
@@ -258,6 +261,11 @@ parse_args() {
         [[ -n "$CLI_PRIMARY_PHP_EXTENSIONS" ]] || die "--primary-php-extensions requires a value"
         shift 2
         ;;
+      --apply-dev-presets)
+        CLI_APPLY_DEV_PRESETS="${2:-}"
+        [[ -n "$CLI_APPLY_DEV_PRESETS" ]] || die "--apply-dev-presets requires yes or no"
+        shift 2
+        ;;
       --only)
         ONLY_STEP="${2:-}"
         [[ -n "$ONLY_STEP" ]] || die "--only requires a step name"
@@ -335,6 +343,7 @@ apply_cli_overrides() {
   [[ -n "$CLI_ENABLE_PPA_ONDREJ_PHP" ]] && export ENABLE_PPA_ONDREJ_PHP="$CLI_ENABLE_PPA_ONDREJ_PHP"
   [[ -n "$CLI_ENABLE_NODESOURCE" ]] && export ENABLE_NODESOURCE="$CLI_ENABLE_NODESOURCE"
   [[ -n "$CLI_PRIMARY_PHP_EXTENSIONS" ]] && export PRIMARY_PHP_EXTENSIONS="$CLI_PRIMARY_PHP_EXTENSIONS"
+  [[ -n "$CLI_APPLY_DEV_PRESETS" ]] && export APPLY_DEV_PRESETS="$CLI_APPLY_DEV_PRESETS"
   return 0
 }
 
@@ -371,6 +380,7 @@ bootstrap_defaults() {
   export ENABLE_PPA_ONDREJ_PHP="${ENABLE_PPA_ONDREJ_PHP:-yes}"
   export ENABLE_NODESOURCE="${ENABLE_NODESOURCE:-yes}"
   export PRIMARY_PHP_EXTENSIONS="${PRIMARY_PHP_EXTENSIONS:-mysql pgsql sqlite3 curl mbstring xml zip intl bcmath gd}" 
+  export APPLY_DEV_PRESETS="${APPLY_DEV_PRESETS:-no}"
 
   init_paths
 }

@@ -62,6 +62,10 @@ validate_choices() {
     [[ -n "$PHP_DEFAULT_VERSION" ]] || die "INSTALL_PHP=yes requires PHP_DEFAULT_VERSION"
     normalize_csv_spaces "$PHP_VERSIONS" | grep -qw "$PHP_DEFAULT_VERSION" || die "PHP_DEFAULT_VERSION must exist in PHP_VERSIONS"
   fi
+
+  if ! is_yes "$APPLY_DEV_PRESETS" && [[ "$APPLY_DEV_PRESETS" != "no" ]]; then
+    die "APPLY_DEV_PRESETS must be yes or no"
+  fi
 }
 
 render_plan() {
@@ -86,5 +90,6 @@ Bootstrap plan:
   INSTALL_PHPMYADMIN=$INSTALL_PHPMYADMIN
   INSTALL_VIRTUALSERVERS=$INSTALL_VIRTUALSERVERS
   PHPMYADMIN_ALIAS=$PHPMYADMIN_ALIAS
+  APPLY_DEV_PRESETS=$APPLY_DEV_PRESETS
 PLAN
 }
