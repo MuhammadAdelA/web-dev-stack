@@ -16,12 +16,11 @@ redact_sensitive() {
   local redacted="$text"
   local secret pattern
 
-  for secret in "${DB_DEV_PASSWORD:-}"; do
-    if [[ -n "$secret" ]]; then
-      pattern="$(escape_glob_pattern "$secret")"
-      redacted="${redacted//$pattern/<redacted>}"
-    fi
-  done
+  if [[ -n "${DB_DEV_PASSWORD:-}" ]]; then
+    secret="$DB_DEV_PASSWORD"
+    pattern="$(escape_glob_pattern "$secret")"
+    redacted="${redacted//$pattern/<redacted>}"
+  fi
 
   printf '%s' "$redacted" | sed -E \
     -e 's/(DB_DEV_PASSWORD=)[^[:space:]]+/\1<redacted>/g' \
