@@ -29,7 +29,7 @@ redact_sensitive() {
     -e 's/(PGPASSWORD=)[^[:space:]]+/\1<redacted>/g' \
     -e 's/(-p")([^"]*)(")/\1<redacted>\3/g' \
     -e "s/(-p')([^']*)(')/\1<redacted>\3/g" \
-    -e 's/(-p)[^[:space:]]+/\1<redacted>/g'
+    -e 's/(^|[[:space:]])(-p)[^[:space:]]+/\1\2<redacted>/g'
 }
 
 log_raw() {

@@ -85,6 +85,8 @@ jobs:
             --install-php no \
             --install-composer no \
             --install-node no \
+            --install-pnpm no \
+            --install-yarn no \
             --db-server none \
             --configure-dev-db-user no \
             --install-postgresql no \
