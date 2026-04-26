@@ -1,0 +1,93 @@
+name: Bootstrap Review
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bootstrap-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-review:
+    name: Static review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck
+
+      - name: Check Bash syntax
+        run: |
+          set -euo pipefail
+          git ls-files '*.sh' | xargs -r -n1 bash -n
+          git ls-files 'configs/*.env' 'bootstrap.env.example' | xargs -r -n1 bash -n
+
+      - name: Run ShellCheck
+        run: |
+          set -euo pipefail
+          git ls-files '*.sh' | xargs -r shellcheck -x -P .
+
+  dry-run-review:
+    name: Bootstrap dry-run review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: static-review
+
+    env:
+      BOOTSTRAP_DRY_RUN: yes
+      BOOTSTRAP_NON_INTERACTIVE: yes
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: |
+          chmod +x bootstrap.sh install.sh
+          find scripts -type f -name '*.sh' -exec chmod +x {} +
+
+      - name: List available bootstrap steps
+        run: ./bootstrap.sh --list
+
+      - name: Dry-run Nginx PHP PostgreSQL Node profile
+        run: |
+          sudo ./bootstrap.sh \
+            --config configs/nginx-php-postgres-node.env \
+            --dry-run \
+            --non-interactive
+
+      - name: Dry-run Apache PHP MariaDB phpMyAdmin Node profile
+        run: |
+          sudo ./bootstrap.sh \
+            --config configs/apache-php-mariadb-phpmyadmin-node.env \
+            --dry-run \
+            --non-interactive
+
+      - name: Dry-run minimal no-service profile
+        run: |
+          sudo ./bootstrap.sh \
+            --dry-run \
+            --non-interactive \
+            --webserver none \
+            --install-php no \
+            --install-composer no \
+            --install-node no \
+            --db-server none \
+            --configure-dev-db-user no \
+            --install-postgresql no \
+            --install-redis no \
+            --install-phpmyadmin no \
+            --install-virtualservers no
